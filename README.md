@@ -24,6 +24,6 @@ Ziel dieses Projekts ist der praktische Aufbau und Betrieb einer kleinen IT-Infr
 
 Beim Einrichten des Windows Servers bin ich auf ein Netzwerkproblem gestoßen: 
 der zweite Netzwerkadapter war in VirtualBox nicht aktiviert, wodurch die 
-Domänenkommunikation zunächst nicht funktionierte. Das hat mir gezeigt, wie 
+Domänenkommunikation zunächst nicht funktionierte. Dies hat mir gezeigt, wie 
 wichtig es ist, Netzwerkkonfigurationen systematisch zu prüfen, bevor man 
 nach komplexeren Ursachen sucht.
