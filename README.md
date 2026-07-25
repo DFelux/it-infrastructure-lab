@@ -14,8 +14,6 @@ Ziel dieses Projekts ist der praktische Aufbau und Betrieb einer kleinen IT-Infr
 - [ ] Windows-Client in Domäne aufgenommen
 - [ ] Ticketsystem eingerichtet
 
-# Screenshots
-
 
 # Was ich dabei gelernt habe
 
