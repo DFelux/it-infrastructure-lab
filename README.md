@@ -21,11 +21,9 @@ Mini-IT-Infrastruktur mit Active Directory, Ticketsystem und dokumentierten Supp
 
 ## Was ich dabei gelernt habe
 
-[x] Konfiguration Windows Server 2022 & Updaten von diesem
-[x] Active Directory implementierung
+- [x] Konfiguration Windows Server 2022 & Updaten von diesem
+- [x] Active Directory implementierung
 
 
 
-
-6. Ein Punkt, der bei Recruitern wirklich zählt: regelmäßige Commits statt einem Riesen-Upload
 Lieber mehrere kleine Commits über die Wochenenden verteilt (jedes Mal, wenn du einen Schritt fertig hast, kurz hochladen) statt alles am Ende in einem Rutsch – das erzeugt auf deinem GitHub-
