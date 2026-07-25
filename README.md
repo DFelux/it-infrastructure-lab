@@ -22,8 +22,4 @@ Mini-IT-Infrastruktur mit Active Directory, Ticketsystem und dokumentierten Supp
 ## Was ich dabei gelernt habe
 
 - [x] Konfiguration Windows Server 2022 & Updaten von diesem
-- [x] Active Directory implementierung
-
-
-
-Lieber mehrere kleine Commits über die Wochenenden verteilt (jedes Mal, wenn du einen Schritt fertig hast, kurz hochladen) statt alles am Ende in einem Rutsch – das erzeugt auf deinem GitHub-
+- [x] Active Directory Grundlage
