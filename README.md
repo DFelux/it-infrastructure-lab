@@ -11,6 +11,8 @@ Ziel dieses Projekts ist der praktische Aufbau und Betrieb einer kleinen IT-Infr
 - [x] Active Directory Domain Services (AD DS), Domäne homelab.local
 - [x] OU-Struktur (IT, Support, Vertrieb) angelegt
 - [x] Erster Benutzer angelegt
+✅ Windows-11-Client installiert, Netzwerk konfiguriert
+✅ Server und Client können sich gegenseitig erreichen (Ping erfolgreich)
 - [ ] Windows-Client in Domäne aufgenommen
 - [ ] Ticketsystem eingerichtet
 
