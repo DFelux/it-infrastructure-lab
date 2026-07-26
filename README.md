@@ -87,4 +87,29 @@ Richtungen fehl.
    **VirtualBox Host-Only-Adapter auf dem Host-PC selbst**
 4. Festgestellt: Bei der vorherigen Fehlersuche wurde versehentlich auf dem 
    Host-Adapter (statt innerhalb der Server-VM) eine manuelle IP im selben 
-   Adressbereich gesetzt – leicht passiert, da mehrere verschachtelte
+   Adressbereich gesetzt – leicht passiert, da mehrere verschachtelte 
+   Remotedesktop-/VM-Fenster gleichzeitig offen waren
+
+**Ursache:** Zwei Geräte im selben internen Netzwerk (Host-PC und Server-VM) 
+beanspruchten dieselbe IP-Adresse, weil die Netzwerkeinstellungen versehentlich 
+auf der falschen Ebene (Host statt Gast-VM) geändert wurden.
+
+**Lösung:** Die manuelle IP-Konfiguration auf dem Host-only-Adapter des 
+Host-PCs zurück auf automatischen Bezug gestellt, sodass ausschließlich 
+Server (`192.168.56.10`) und Client (`192.168.56.20`) feste Adressen im 
+internen Netz halten. Nach einem Neustart des Adapters funktionierte die 
+Kommunikation zwischen Server und Client fehlerfrei.
+
+**Erkenntnis:** Bei verschachtelten Umgebungen (Host, Remotedesktop, mehrere 
+VM-Fenster gleichzeitig) ist es entscheidend, vor jeder Netzwerkänderung zu 
+prüfen, auf welcher Ebene man sich gerade befindet. Ein `arp -a` vom 
+unbeteiligten dritten Gerät aus (hier: dem Client) war der entscheidende 
+Schritt, um die Ursache eindeutig zu lokalisieren, statt nur auf dem 
+betroffenen Server selbst zu suchen.
+
+## Meilenstein: Client erfolgreich in Domäne aufgenommen
+
+Nach Behebung des IP-Konflikts konnte der Windows-11-Client erfolgreich der 
+Domäne `homelab.local` beitreten. Nach einem Neustart erfolgt der Login nun 
+über das Domänenkonto (`HOMELAB\Administrator`), der Client erscheint 
+korrekt im Container „Computers" der Active-Directory-Struktur auf dem Server.
