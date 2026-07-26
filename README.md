@@ -68,3 +68,23 @@ sich nicht durch einfache Einstellungsänderungen beheben lassen. Die
 eigentliche Ursache ließ sich erst durch systematisches Auswerten der 
 VirtualBox-Logs und der Windows-Systeminformationen statt durch reines 
 Ausprobieren finden.
+
+## Troubleshooting: IP-Adresskonflikt zwischen Host und Server-VM
+
+Nach der Netzwerkkonfiguration von Server und Client meldete Windows Server 
+bei seiner eigenen Host-only-IP (`192.168.56.10`) dauerhaft den Status 
+„Dupliziert" und wich auf eine automatische Behelfsadresse (169.254.x.x) aus. 
+Ping-Versuche zwischen Server und Client schlugen dadurch in beide 
+Richtungen fehl.
+
+**Vorgehen:**
+1. Feste IP-Konfiguration auf Server und Client einzeln über `ipconfig /all` 
+   geprüft – beide korrekt eingetragen, kein Tippfehler
+2. Mit `arp -a` vom Client aus geprüft, welches Gerät tatsächlich auf 
+   `192.168.56.10` antwortet
+3. Die dabei ermittelte MAC-Adresse mit den bekannten Adaptern abgeglichen – 
+   sie gehörte weder zum Server noch zum Client, sondern zum 
+   **VirtualBox Host-Only-Adapter auf dem Host-PC selbst**
+4. Festgestellt: Bei der vorherigen Fehlersuche wurde versehentlich auf dem 
+   Host-Adapter (statt innerhalb der Server-VM) eine manuelle IP im selben 
+   Adressbereich gesetzt – leicht passiert, da mehrere verschachtelte
