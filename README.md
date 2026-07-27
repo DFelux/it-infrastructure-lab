@@ -24,6 +24,56 @@ Domänenkommunikation zunächst nicht funktionierte. Dies hat mir gezeigt, wie
 wichtig es ist, Netzwerkkonfigurationen systematisch zu prüfen, bevor man 
 nach komplexeren Ursachen sucht.
 
+## Screenshots
+
+### VirtualBox – Snapshot-Verlauf
+![Snapshot-Baum](screenshots/01-vm-snapshot-baum.png)
+
+Jeder wichtige Meilenstein wurde als Snapshot gesichert – von der 
+Frischinstallation bis zum Domänenbeitritt des Clients.
+
+### Server- und Client-VM im Überblick
+![VM-Details Server](screenshots/02-vm-details-server.png)
+![VM-Details Client](screenshots/03-vm-details-client.png)
+
+### VM-Erstellung: Ressourcenzuteilung
+![VM-Ressourcen](screenshots/04-vm-erstellung-ressourcen.png)
+
+### Server-Manager: Lokaler Server
+![Server-Manager](screenshots/05-server-manager-lokaler-server.png)
+
+### Netzwerkadapter-Konfiguration (Host-only)
+![Netzwerkadapter](screenshots/06-netzwerkadapter-einstellungen.png)
+![IPv4-Eigenschaften Ethernet 2](screenshots/07-ipv4-eigenschaften-ethernet2.png)
+
+Feste IP-Adressen im internen Netz vergeben: Server `192.168.56.10`, 
+Client `192.168.56.20`.
+
+### Troubleshooting: IP-Adresskonflikt
+
+**Fehlerbild:** Der zweite Netzwerkadapter (NAT) hatte versehentlich eine 
+leere, ungültige manuelle IP-Konfiguration.
+![Ethernet 1 leer](screenshots/08-ipv4-eigenschaften-ethernet1-leer.png)
+
+**Symptom:** Der Server zeigte bei seiner eigenen IP den Status „Dupliziert“, 
+Ping zwischen Server und Client schlug fehl.
+![Ping-Timeout](screenshots/15-ping-timeout-fehlerfall.png)
+![ipconfig Duplikat](screenshots/11-ipconfig-server-duplikat.png)
+
+**Diagnose:** Mit `arp -a` vom Client aus die tatsächlich antwortende 
+MAC-Adresse ermittelt und mit den bekannten Adaptern abgeglichen.
+![arp -a Client](screenshots/14-arp-a-client-ursache-gefunden.png)
+![arp -a Server](screenshots/13-arp-a-server-seite.png)
+
+**Lösung:** Nach Korrektur der Host-Adapter-Konfiguration funktionierte die 
+Kommunikation fehlerfrei.
+![ipconfig korrekt Client](screenshots/12-ipconfig-client-korrekt.png)
+![ipconfig NAT repariert](screenshots/10-ipconfig-nat-adapter-repariert.png)
+![ipconfig finaler Check](screenshots/16-ipconfig-final-check.png)
+
+### Server-Identität nach Umbenennung (DC01)
+![ipconfig DC01](screenshots/09-ipconfig-server-dc01.png)
+
 ## Troubleshooting: Schwarzer Bildschirm bei Windows-11-Client-VM
 
 Beim ersten Start der Windows-11-Client-VM blieb der Bildschirm in VirtualBox 
