@@ -153,6 +153,7 @@ Ping zwischen Server und Client schlug fehl.
 
 **Diagnose:** Mit `arp -a` vom Client aus die tatsächlich antwortende 
 MAC-Adresse ermittelt und mit den bekannten Adaptern abgeglichen.
+
 ![arp -a Client](screenshots/14-arp-a-client-ursache-gefunden.png)
 ![arp -a Server](screenshots/13-arp-a-server-seite.png)
 
