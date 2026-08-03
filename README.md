@@ -166,5 +166,44 @@ Kommunikation fehlerfrei.
 
 ![ipconfig finaler Check](screenshots/16-ipconfig-final-check.png)
 
+## Meilenstein: Ticketsystem-VM (Ubuntu Server + Docker)
+
+Als dritte Komponente wurde eine Ubuntu Server 26.04 LTS VM aufgesetzt, 
+auf der Zammad containerisiert über Docker Compose betrieben wird.
+
+### Troubleshooting: Netplan-Konfiguration schlägt trotz korrektem 
+Inhalt fehl
+
+**Fehlerbild:** `netplan apply` meldete wiederholt 
+`expected mapping (check indentation)`, obwohl die eingefügte YAML-Datei 
+augenscheinlich korrekt aussah.
+
+**Ursache:** Die VirtualBox-Textkonsole (ohne grafische Oberfläche) 
+entfernt beim Einfügen mehrzeiligen Texts die führenden Leerzeichen jeder 
+Zeile – dadurch ging die für YAML zwingend nötige Einrückung verloren.
+
+**Lösung:** Die Konfigurationsdatei stattdessen über einen kontrollierten 
+`printf`-Befehl in einer einzigen Zeile geschrieben, sodass Einrückung 
+und Zeilenumbrüche nicht durch das Einfügeverhalten der Konsole verändert 
+werden konnten.
+
+### Troubleshooting: Host verliert Verbindung zu allen Lab-VMs
+
+**Fehlerbild:** Nach einem vorherigen Fix (Host-Adapter auf automatischen 
+IP-Bezug zurückgesetzt) konnte der Host-PC plötzlich weder Server, Client 
+noch die neue Ticketsystem-VM erreichen.
+
+**Diagnose:** `ipconfig /all` zeigte beim Host-only-Adapter eine 
+APIPA-Adresse (169.254.x.x) statt einer gültigen IP – der Adapter 
+versuchte per DHCP eine Adresse zu beziehen, bekam aber keine Antwort, 
+da der DHCP-Server im internen Netz bewusst deaktiviert ist.
+
+**Lösung:** Dem Host-Adapter eine eigene, feste IP (192.168.56.1) 
+zugewiesen, die nicht mit Server (.10), Client (.20) oder Ticketsystem 
+(.30) kollidiert.
+
+**Erkenntnis:** Bei einem selbst verwalteten internen Netzwerk ohne 
+DHCP-Server benötigt jedes teilnehmende Gerät – auch der Host selbst – 
+eine bewusst vergebene, feste IP-Adresse.
 ### Server-Identität nach Umbenennung (DC01)
 ![ipconfig DC01](screenshots/09-ipconfig-server-dc01.png)
