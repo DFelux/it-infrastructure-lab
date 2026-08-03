@@ -155,12 +155,15 @@ Ping zwischen Server und Client schlug fehl.
 MAC-Adresse ermittelt und mit den bekannten Adaptern abgeglichen.
 
 ![arp -a Client](screenshots/14-arp-a-client-ursache-gefunden.png)
+
 ![arp -a Server](screenshots/13-arp-a-server-seite.png)
 
 **Lösung:** Nach Korrektur der Host-Adapter-Konfiguration funktionierte die 
 Kommunikation fehlerfrei.
 ![ipconfig korrekt Client](screenshots/12-ipconfig-client-korrekt.png)
+
 ![ipconfig NAT repariert](screenshots/10-ipconfig-nat-adapter-repariert.png)
+
 ![ipconfig finaler Check](screenshots/16-ipconfig-final-check.png)
 
 ### Server-Identität nach Umbenennung (DC01)
