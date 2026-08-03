@@ -166,6 +166,9 @@ Kommunikation fehlerfrei.
 
 ![ipconfig finaler Check](screenshots/16-ipconfig-final-check.png)
 
+### Server-Identität nach Umbenennung (DC01)
+![ipconfig DC01](screenshots/09-ipconfig-server-dc01.png)
+
 ## Meilenstein: Ticketsystem-VM (Ubuntu Server + Docker)
 
 Als dritte Komponente wurde eine Ubuntu Server 26.04 LTS VM aufgesetzt, 
@@ -205,5 +208,3 @@ zugewiesen, die nicht mit Server (.10), Client (.20) oder Ticketsystem
 **Erkenntnis:** Bei einem selbst verwalteten internen Netzwerk ohne 
 DHCP-Server benötigt jedes teilnehmende Gerät – auch der Host selbst – 
 eine bewusst vergebene, feste IP-Adresse.
-### Server-Identität nach Umbenennung (DC01)
-![ipconfig DC01](screenshots/09-ipconfig-server-dc01.png)
