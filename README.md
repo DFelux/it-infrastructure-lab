@@ -13,7 +13,7 @@ Ziel dieses Projekts ist der praktische Aufbau und Betrieb einer kleinen IT-Infr
 - [x] Windows-11-Client installiert, Netzwerk konfiguriert
 - [x] Server und Client können sich gegenseitig erreichen (Ping erfolgreich)
 - [x] Windows-Client in Domäne aufgenommen
-- [ ] Ticketsystem eingerichtet
+- [x] Ticketsystem eingerichtet
 
 
 # Was ich dabei gelernt habe
