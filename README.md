@@ -174,8 +174,7 @@ Kommunikation fehlerfrei.
 Als dritte Komponente wurde eine Ubuntu Server 26.04 LTS VM aufgesetzt, 
 auf der Zammad containerisiert über Docker Compose betrieben wird.
 
-### Troubleshooting: Netplan-Konfiguration schlägt trotz korrektem 
-Inhalt fehl
+### Troubleshooting: Netplan-Konfiguration schlägt trotz korrektem Inhalt fehl
 
 **Fehlerbild:** `netplan apply` meldete wiederholt 
 `expected mapping (check indentation)`, obwohl die eingefügte YAML-Datei 
