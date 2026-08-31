@@ -104,7 +104,7 @@ Kommunikation zwischen Server und Client fehlerfrei.
 **Erkenntnis:** Bei verschachtelten Umgebungen (Host, Remotedesktop, mehrere 
 VM-Fenster gleichzeitig) ist es entscheidend, vor jeder Netzwerkänderung zu 
 prüfen, auf welcher Ebene man sich gerade befindet. Ein `arp -a` vom 
-unbeteiligten dritten Gerät aus (hier: dem Client) war der entscheidende 
+unbeteiligten dritten Gerät aus (hier: Client) war der entscheidende 
 Schritt, um die Ursache eindeutig zu lokalisieren, statt nur auf dem 
 betroffenen Server selbst zu suchen.
 
