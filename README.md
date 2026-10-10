@@ -1,4 +1,3 @@
-
 Ziel dieses Projekts ist der praktische Aufbau und Betrieb einer kleinen IT-Infrastruktur im Homelab, um die theoretisch erlernten Inhalte aus dem Google IT Support Professional Certificate praktisch anzuwenden und zu dokumentieren. Das Projekt bildet typische Aufgaben eines Service-Desk-Mitarbeiters ab: Benutzerverwaltung über Active Directory, Support-Fallbearbeitung über ein Ticketsystem sowie grundlegende Windows-Client/Server-Administration.
 
 # Architektur
@@ -14,6 +13,7 @@ Ziel dieses Projekts ist der praktische Aufbau und Betrieb einer kleinen IT-Infr
 - [x] Server und Client können sich gegenseitig erreichen (Ping erfolgreich)
 - [x] Windows-Client in Domäne aufgenommen
 - [x] Ticketsystem eingerichtet
+- [ ] Ticketsystem-VM (Zammad) neu aufgebaut (v2) – in Arbeit
 
 
 # Was ich dabei gelernt habe
@@ -207,3 +207,139 @@ zugewiesen, die nicht mit Server (.10), Client (.20) oder Ticketsystem
 **Erkenntnis:** Bei einem selbst verwalteten internen Netzwerk ohne 
 DHCP-Server benötigt jedes teilnehmende Gerät – auch der Host selbst – 
 eine bewusst vergebene, feste IP-Adresse.
+
+## Neuaufbau der Ticketsystem-VM (Zammad v2)
+
+Die Ticketsystem-VM (`ZammadTicketv2`) wurde neu aufgesetzt, diesmal 
+bewusst selbstständig anhand der offiziellen Online-Dokumentation. Die VM 
+(Ubuntu Server 26.04) hat zwei Netzwerkadapter: `enp0s3` für den 
+Internetzugang (Updates, Docker-Images) und `enp0s8` im internen Host-only-Netz 
+mit der festen Adresse `192.168.56.30`.
+
+### Troubleshooting: Fehlermeldung bei der Netzwerkkonfiguration im Ubuntu-Installer
+
+**Fehlerbild:** Der Installer lehnte die statische Adresse mit 
+`'192.168.56.30' is not contained in '255.255.255.0/24'` ab.
+![Installer Fehlermeldung](screenshots/17-zammad-installer-subnet-fehler.png)
+
+**Ursache:** Zwei Fehler gleichzeitig:
+1. Im Feld *Subnet* war die Subnetzmaske (`255.255.255.0/24`) eingetragen, 
+   der Installer erwartet dort die **Netzadresse in CIDR-Schreibweise** 
+   (`192.168.56.0/24`).
+2. Die Interfaces waren vertauscht: `enp0s3` ist der NAT-Adapter 
+   (DHCP, `10.0.2.15/24`), das Host-only-Netz gehört zu `enp0s8`. Eine 
+   statische Host-only-Adresse auf `enp0s3` hätte den Internetzugang der VM 
+   gekappt.
+
+**Lösung:** `enp0s3` unverändert per DHCP belassen, `enp0s8` auf *Manual* 
+gestellt mit Subnet `192.168.56.0/24` und Address `192.168.56.30`, 
+Gateway und Name servers leer (im Host-only-Netz gibt es keines).
+![Netzwerk final im Installer](screenshots/18-zammad-installer-netzwerk-final.png)
+
+**Erkenntnis:** Die Zuordnung der Interfaces lässt sich über die 
+MAC-Adressen im Installer und die Adapter-Reihenfolge in den 
+VirtualBox-Netzwerkeinstellungen (Adapter 1 = NAT, Adapter 2 = Host-only) 
+verlässlich prüfen. Nach der Installation bestätigte `ip a` die Konfiguration.
+![ip a und SSH-Status](screenshots/19-zammad-ip-a-ssh-status.png)
+
+### Troubleshooting: VM per SSH vom Notebook nicht erreichbar, obwohl alles korrekt konfiguriert ist
+
+**Symptom:** Von der Windows-Server-VM war die Zammad-VM erreichbar, vom 
+Notebook (Zugriff auf das Lab) dagegen weder per Ping noch per 
+`Test-NetConnection 192.168.56.30 -Port 22` (Timeout). Im Testergebnis fiel 
+auf: `InterfaceAlias: WLAN`, `SourceAddress: 192.168.178.27` – die Pakete 
+verließen das Notebook über das WLAN statt über den Host-only-Adapter.
+![Test-NetConnection über WLAN](screenshots/20-test-netconnection-wlan-fehlschlag.png)
+
+**Vorgehen:**
+1. `ipconfig` am Notebook: Der Host-only-Adapter hat `192.168.56.1/24`, 
+   liegt also im selben Netz wie die VM – die Konfiguration wirkte stimmig
+   ![ipconfig Host-only-Adapter am Notebook](screenshots/21-ipconfig-notebook-host-only.png)
+2. `Find-NetRoute -RemoteIPAddress 192.168.56.30`: Windows routet über die 
+   Standardroute (WLAN, Fritzbox) statt über den Host-only-Adapter
+3. `Get-NetRoute` und `Get-NetAdapter`: Die Route `192.168.56.0/24` existiert, 
+   der Adapter ist `Up` und `Connected` – der Adapter selbst ist also intakt
+4. `ping -S 192.168.56.1 192.168.56.30` (Quelladresse erzwungen) lieferte 
+   „Zielhost nicht erreichbar“ vom Absender `192.168.56.1` selbst – die 
+   ARP-Auflösung bleibt unbeantwortet, das Problem liegt auf Layer 2 und 
+   weder bei Firewall noch bei Routing
+5. Gegenprobe in der VM: `ping 192.168.56.1` funktioniert (`ttl=128`), 
+   `ip neigh` zeigt für `192.168.56.1` die MAC `0a:00:27:00:00:14`
+   ![ip neigh in der VM](screenshots/22-vm-ip-neigh-mac-abweichung.png)
+6. `Get-NetAdapter` am Notebook: Der Host-only-Adapter hat die MAC 
+   `0A-00-27-00-00-0D` – **nicht** dieselbe MAC, die die VM sieht
+
+**Ursache:** Die VM läuft nicht auf dem Notebook, sondern auf dem Mini-PC 
+(Lenovo ThinkCentre M720q). Ein Host-only-Netz existiert nur auf dem Rechner, 
+auf dem VirtualBox läuft. Das Notebook besitzt einen eigenen, völlig 
+getrennten Host-only-Adapter, der zufällig dieselbe Standardadresse 
+`192.168.56.1` trägt. Dass die Windows-Server-VM die Zammad-VM erreicht, 
+liegt daran, dass beide im Host-only-Netz des Mini-PCs hängen.
+
+**Lösung:** In der VM-Konfiguration den Adapter 1 von NAT auf 
+**Netzwerkbrücke** (Bridged) umgestellt. Die VM erhält nun eine Adresse aus 
+dem Heimnetz (`192.168.178.31`) und ist vom Notebook per SSH erreichbar. 
+Adapter 2 (`enp0s8`, `192.168.56.30`) bleibt unverändert für die interne 
+Kommunikation mit Server und Client.
+![ip a mit Bridged-Adapter](screenshots/23-zammad-ip-a-bridged.png)
+
+<!-- Optional ergänzen, falls erledigt: feste IP-Reservierung in der Fritzbox für diese VM -->
+
+**Erkenntnis:** Host-only-Netze sind auf den jeweiligen Host-Rechner 
+begrenzt; derselbe Standardadressbereich kann auf mehreren Rechnern 
+gleichzeitig existieren und täuscht dann Erreichbarkeit vor. Entscheidend 
+war der **Vergleich der MAC-Adressen** zwischen Gast (`ip neigh`) und Host 
+(`Get-NetAdapter`). Ein erzwungener Ping mit `-S` schloss Firewall und 
+Routing sauber aus, bevor die Ursache gefunden wurde.
+
+### Troubleshooting: Zammad-Weboberfläche nicht erreichbar („Verbindung abgelehnt“)
+
+**Symptom:** In der Fritzbox erscheint die VM, die Schaltfläche 
+„Konfiguration“ liefert „Fehler 404 – Seite nicht gefunden“. Im Browser meldet 
+`192.168.178.31` „Verbindung abgelehnt“.
+
+**Diagnose:**
+1. „Verbindung abgelehnt“ (statt Timeout) bedeutet: Die VM ist erreichbar, 
+   aber auf dem angefragten Port lauscht kein Dienst – eine Firewall wäre es nicht
+2. `ss -tlnp`: Es lauschen nur SSH (Port 22) und der lokale DNS-Stub, 
+   nichts auf Port 80 oder 8080
+3. `docker compose ps` meldete `docker: unknown command: docker compose`
+   ![ss -tlnp und fehlendes Compose-Plugin](screenshots/24-zammad-ss-tlnp-compose-fehlt.png)
+
+**Ursache:** Das Docker-Compose-Plugin fehlt, der Zammad-Stack wurde 
+deshalb nie gestartet. Die Schaltfläche der Fritzbox ruft Port 80 auf, auf dem 
+die VM nichts anbietet; die 404-Seite stammt vermutlich von der Fritzbox selbst.
+
+**Erkenntnis:** Der Unterschied zwischen „Verbindung abgelehnt“ (Dienst 
+lauscht nicht) und Timeout (Paket kommt nicht an / wird gefiltert) grenzt die 
+Fehlersuche sofort ein, `ss -tlnp` belegt es.
+
+### Troubleshooting: Docker-Repository lässt sich nicht einbinden
+
+**Fehlerbild:** Bei der Installation von `docker-ce`, `docker-compose-plugin` 
+und Co. meldete `apt`: „Für Paket ›docker-ce‹ existiert kein 
+Installationskandidat“. Zuvor hatte der Befehl zum Anlegen des Schlüssels 
+`gpg: no valid OpenPGP data found` ausgegeben.
+![Fehlermeldungen bei der Docker-Installation](screenshots/25-docker-repo-gpg-fehler.png)
+
+**Diagnose:**
+1. Der Schlüssel wurde mit `curl` von `https://docker.com` geladen – das 
+   liefert die Webseite (HTML), keinen GPG-Schlüssel
+2. `apt update` listete danach nur die vier Ubuntu-Quellen – das 
+   Docker-Repository war nie eingetragen
+3. Zusätzlich ein Tippfehler im Paketnamen (`cotainerd.io` statt `containerd.io`)
+
+**Ursache:** Falsche Schlüssel-URL und fehlender Repository-Eintrag, dadurch 
+kannte `apt` die Docker-Pakete nicht. Offen ist zusätzlich, ob das 
+Docker-Repository bereits Ubuntu 26.04 („resolute“) unterstützt.
+
+<!-- Lösung und Ergebnis nach Fortsetzung ergänzen (Repo-Eintrag, docker compose version, Start des Zammad-Stacks) -->
+
+### Hinweis: Arbeiten per SSH statt in der VM-Konsole
+
+Das Einfügen von Befehlen per Strg+V funktioniert in der Text-Konsole der VM 
+nicht (die gemeinsame Zwischenablage von VirtualBox setzt die 
+Gasterweiterungen und eine grafische Oberfläche voraus, und beim 
+Einfügen gingen schon bei der Netplan-Konfiguration Leerzeichen verloren). 
+Die VM wird deshalb per SSH vom Notebook aus verwaltet, wo sich Befehle 
+und Konfigurationsdateien zuverlässig einfügen lassen.
