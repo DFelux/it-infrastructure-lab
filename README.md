@@ -13,7 +13,8 @@ Ziel dieses Projekts ist der praktische Aufbau und Betrieb einer kleinen IT-Infr
 - [x] Server und Client können sich gegenseitig erreichen (Ping erfolgreich)
 - [x] Windows-Client in Domäne aufgenommen
 - [x] Ticketsystem eingerichtet
-- [ ] Ticketsystem-VM (Zammad) neu aufgebaut (v2) – in Arbeit
+- [x] Ticketsystem-VM (Zammad) neu aufgebaut (v2), Weboberfläche erreichbar, Rollen Support L1–L3 angelegt
+- [ ] Zammad konfigurieren: Gruppen, Testbenutzer, Eskalationsablauf L1–L3
 
 
 # Was ich dabei gelernt habe
@@ -214,7 +215,13 @@ Die Ticketsystem-VM (`ZammadTicketv2`) wurde neu aufgesetzt, diesmal
 bewusst selbstständig anhand der offiziellen Online-Dokumentation. Die VM 
 (Ubuntu Server 26.04) hat zwei Netzwerkadapter: `enp0s3` für den 
 Internetzugang (Updates, Docker-Images) und `enp0s8` im internen Host-only-Netz 
-mit der festen Adresse `192.168.56.30`.
+mit der festen Adresse `192.168.56.30`. Der Zugriff vom Notebook erfolgt über 
+NAT mit Portweiterleitung (siehe unten); zwischenzeitlich wurde eine 
+Netzwerkbrücke verwendet.
+
+Ressourcen der VM: 8 GB RAM, 2 Prozessoren, virtuelle Platte mit 25 GB. 
+Der Überblick zeigt alle VMs des Labs.
+![VirtualBox-Überblick](screenshots/37-virtualbox-ueberblick-alle-vms.png)
 
 ### Troubleshooting: Fehlermeldung bei der Netzwerkkonfiguration im Ubuntu-Installer
 
@@ -276,14 +283,14 @@ getrennten Host-only-Adapter, der zufällig dieselbe Standardadresse
 `192.168.56.1` trägt. Dass die Windows-Server-VM die Zammad-VM erreicht, 
 liegt daran, dass beide im Host-only-Netz des Mini-PCs hängen.
 
-**Lösung:** In der VM-Konfiguration den Adapter 1 von NAT auf 
-**Netzwerkbrücke** (Bridged) umgestellt. Die VM erhält nun eine Adresse aus 
-dem Heimnetz (`192.168.178.31`) und ist vom Notebook per SSH erreichbar. 
-Adapter 2 (`enp0s8`, `192.168.56.30`) bleibt unverändert für die interne 
-Kommunikation mit Server und Client.
+**Lösung (Zwischenlösung):** In der VM-Konfiguration den Adapter 1 von NAT auf 
+**Netzwerkbrücke** (Bridged) umgestellt. Die VM erhielt eine Adresse aus 
+dem Heimnetz (`192.168.178.31`) und war vom Notebook per SSH erreichbar. 
+Adapter 2 (`enp0s8`, `192.168.56.30`) blieb unverändert für die interne 
+Kommunikation mit Server und Client. Die Brücke wurde später wegen sehr 
+langsamer Downloads wieder durch NAT mit Portweiterleitung ersetzt (siehe 
+weiter unten).
 ![ip a mit Bridged-Adapter](screenshots/23-zammad-ip-a-bridged.png)
-
-<!-- Optional ergänzen, falls erledigt: feste IP-Reservierung in der Fritzbox für diese VM -->
 
 **Erkenntnis:** Host-only-Netze sind auf den jeweiligen Host-Rechner 
 begrenzt; derselbe Standardadressbereich kann auf mehreren Rechnern 
@@ -322,24 +329,161 @@ Installationskandidat“. Zuvor hatte der Befehl zum Anlegen des Schlüssels
 `gpg: no valid OpenPGP data found` ausgegeben.
 ![Fehlermeldungen bei der Docker-Installation](screenshots/25-docker-repo-gpg-fehler.png)
 
-**Diagnose:**
+**Diagnose und Behebung:**
 1. Der Schlüssel wurde mit `curl` von `https://docker.com` geladen – das 
-   liefert die Webseite (HTML), keinen GPG-Schlüssel
-2. `apt update` listete danach nur die vier Ubuntu-Quellen – das 
-   Docker-Repository war nie eingetragen
-3. Zusätzlich ein Tippfehler im Paketnamen (`cotainerd.io` statt `containerd.io`)
+   liefert die Webseite (HTML), keinen GPG-Schlüssel. Richtig ist 
+   `https://download.docker.com/linux/ubuntu/gpg`.
+2. `apt update` meldete für `https://www.docker.com resolute` „404 Not Found“ 
+   und „enthält keine Release-Datei“. In `/etc/apt/sources.list.d/docker.list` 
+   stand die falsche URL `https://docker.com`. Gefunden mit 
+   `grep -rn "docker" /etc/apt/sources.list /etc/apt/sources.list.d/`, die 
+   Datei wurde gelöscht.
+   ![Falscher Repository-Eintrag gefunden und entfernt](screenshots/26-docker-falsches-repo-entfernt.png)
+3. Neuer Eintrag `/etc/apt/sources.list.d/docker.sources` mit 
+   `URIs: https://download.docker.com/linux/ubuntu` und `Suites: resolute`. 
+   `apt update` lud nun die Paketliste von `download.docker.com` – das 
+   Docker-Repository unterstützt Ubuntu 26.04 also – meldete aber 
+   `NO_PUBKEY`, weil die Schlüsseldatei `/etc/apt/keyrings/docker.asc` nie 
+   angelegt worden war (der `curl`-Befehl war beim fehlerhaften Einfügen 
+   untergegangen, siehe nächster Abschnitt).
+   ![NO_PUBKEY-Fehler](screenshots/27-docker-no-pubkey-fehler.png)
+4. Schlüssel von der richtigen URL nachgeladen, `apt update` lief ohne 
+   Fehler. Danach `docker-ce`, `docker-ce-cli`, `containerd.io`, 
+   `docker-buildx-plugin` und `docker-compose-plugin` installiert. Dabei 
+   wurden die zuvor installierten Ubuntu-Pakete `docker.io`, `containerd` 
+   und `runc` ersetzt.
+   ![Installation ersetzt docker.io](screenshots/28-docker-installation-ersetzt-docker-io.png)
+5. Test mit `sudo docker run hello-world` erfolgreich.
+   ![hello-world](screenshots/29-docker-hello-world.png)
 
-**Ursache:** Falsche Schlüssel-URL und fehlender Repository-Eintrag, dadurch 
-kannte `apt` die Docker-Pakete nicht. Offen ist zusätzlich, ob das 
-Docker-Repository bereits Ubuntu 26.04 („resolute“) unterstützt.
+**Ursache:** Mehrere Fehler zusammen: falsche Schlüssel-URL und falsche 
+Repository-URL (jeweils ohne `download.`), eine nie angelegte Schlüsseldatei 
+und ein zuvor installiertes `docker.io` aus den Ubuntu-Quellen, das kein 
+Compose-Plugin mitbrachte.
 
-<!-- Lösung und Ergebnis nach Fortsetzung ergänzen (Repo-Eintrag, docker compose version, Start des Zammad-Stacks) -->
+**Erkenntnis:** `NO_PUBKEY` zeigt, dass die Quelle stimmt und nur der 
+Schlüssel fehlt; „404“ und „keine Release-Datei“ weisen dagegen auf eine 
+falsche Repository-URL hin. Das offizielle Docker-Repository bietet Pakete 
+für Ubuntu 26.04 (`resolute`) an.
 
-### Hinweis: Arbeiten per SSH statt in der VM-Konsole
+### Troubleshooting: Befehle lassen sich nicht sauber einfügen
 
-Das Einfügen von Befehlen per Strg+V funktioniert in der Text-Konsole der VM 
-nicht (die gemeinsame Zwischenablage von VirtualBox setzt die 
-Gasterweiterungen und eine grafische Oberfläche voraus, und beim 
-Einfügen gingen schon bei der Netplan-Konfiguration Leerzeichen verloren). 
-Die VM wird deshalb per SSH vom Notebook aus verwaltet, wo sich Befehle 
-und Konfigurationsdateien zuverlässig einfügen lassen.
+**Fehlerbild:** Beim Einfügen mehrzeiliger Befehlsblöcke in die SSH-Sitzung 
+tauchten Steuerzeichen im Text auf: `^[[200~` und `^[[201~` vor bzw. hinter 
+dem Block sowie `^M` am Zeilenende. Folgen: `sudo: command not found` (aus 
+`sudo` wurde `^[[201~sudo`), und ein Heredoc, das nicht endete, weil die 
+Shell `EOF^M` nicht als Abschluss erkannte.
+
+**Ursache:** Das Terminal sendet beim Einfügen die Markierungen des 
+„Bracketed Paste“-Modus, die als Text ankamen, und die Zeilenenden aus der 
+Windows-Zwischenablage wurden als `^M` übergeben.
+
+**Lösung:**
+- Für die Sitzung `bind 'set enable-bracketed-paste off'`
+- Befehle einzeln statt als Block einfügen, eine Passwortabfrage vorher mit 
+  `sudo -v` erledigen
+- Konfigurationsdateien statt per Heredoc mit einem einzeiligen 
+  `printf … | sudo tee …` schreiben (wie schon bei der Netplan-Datei)
+
+**Erkenntnis:** Auch eine SSH-Sitzung löst das Einfügeproblem der 
+VM-Konsole nicht automatisch. Entscheidend ist, eingefügte Befehle vor dem 
+Absenden auf Steuerzeichen zu prüfen und das Ergebnis jedes Schritts zu 
+kontrollieren (`cat`, `head`).
+
+### Troubleshooting: „permission denied“ beim Zugriff auf den Docker-Socket
+
+**Fehlerbild:** `docker compose up` meldete 
+`permission denied while trying to connect to the docker API at unix:///var/run/docker.sock`. 
+Die Warnung zu `postgresql-initdb.mode` („not supported outside Swarm mode“) 
+ist dagegen harmlos und wird ignoriert.
+
+**Ursache:** Der Benutzer war nicht Mitglied der Gruppe `docker`.
+
+**Lösung:** `sudo usermod -aG docker $USER`, danach ab- und wieder anmelden. 
+Anschließend läuft `docker compose` ohne `sudo`.
+
+**Hinweis:** Die Mitgliedschaft in der Gruppe `docker` entspricht praktisch 
+Root-Rechten auf dem Host. Im Lab ist das ein bewusster Kompromiss.
+
+### Troubleshooting: Sehr langsamer Image-Download mit Netzwerkbrücke über WLAN
+
+**Symptom:** Der Download der Zammad-Images kam mit der Netzwerkbrücke kaum 
+voran. Beim ersten Aufbau der VM (mit NAT) hatte der gesamte Download 
+ungefähr 10 Minuten gedauert.
+![Image-Pull mit Netzwerkbrücke](screenshots/30-zammad-compose-pull-bridged-wlan.png)
+
+**Diagnose:** Der Mini-PC hängt per WLAN am Router (ein LAN-Kabel ist nicht 
+möglich). Die empfangenen Bytes über zehn Sekunden gemessen: 
+`cat /sys/class/net/enp0s3/statistics/rx_bytes; sleep 10; cat /sys/class/net/enp0s3/statistics/rx_bytes` 
+ergab 4.125.918 Bytes, also rund 410 kB/s. Der Unterschied zum ersten Aufbau 
+war der Adaptertyp: damals NAT, jetzt Netzwerkbrücke über WLAN.
+![Messung der Downloadrate](screenshots/31-zammad-rx-bytes-messung.png)
+
+**Lösung:** Adapter 1 zurück auf **NAT** gestellt und zwei 
+Portweiterleitungen angelegt: Host-Port `2222` auf Gast-Port `22` (SSH) und 
+Host-Port `8080` auf Gast-Port `8080` (Zammad). `enp0s8` blieb unverändert.
+![Portweiterleitung](screenshots/32-zammad-nat-portweiterleitung.png)
+![ip a mit NAT](screenshots/33-zammad-ip-a-nat.png)
+
+Der Zugriff vom Notebook erfolgt nun über die IP des Mini-PCs: 
+`ssh -p 2222 <benutzer>@<IP-des-Mini-PCs>` und 
+`http://<IP-des-Mini-PCs>:8080`.
+
+<!-- Dauer des Image-Downloads nach dem Wechsel auf NAT eintragen -->
+
+**Erkenntnis:** Bei NAT liegt die VM in einem eigenen privaten Netz (`10.0.2.x`) 
+hinter dem Host. Vom Notebook aus spricht man deshalb immer den Mini-PC an, 
+VirtualBox reicht die Verbindung per Portweiterleitung an die VM weiter. 
+Dass die Netzwerkbrücke über WLAN die Ursache war, ergibt sich aus dem 
+Vorher-Nachher-Vergleich und nicht aus einer isolierten Messung. Zu beachten: 
+Ohne Host-IP in den Regeln sind die Ports von allen Geräten im Heimnetz 
+erreichbar.
+
+## Meilenstein: Zammad läuft
+
+Der Stack wird im Verzeichnis `zammad-docker-compose` mit 
+`docker compose up -d` gestartet. Im Home-Verzeichnis meldet `docker compose` 
+dagegen „no configuration file provided: not found“, denn die Befehle müssen 
+dort ausgeführt werden, wo die `docker-compose.yml` liegt. Beim Start 
+wurden Netzwerk und Volumes angelegt, Redis, PostgreSQL und Memcached meldeten 
+sich als `Healthy`, der Rails-Server wartete auf den Init-Container.
+![docker compose up -d](screenshots/34-zammad-compose-up.png)
+
+Anschließend war die Weboberfläche unter `http://<IP-des-Mini-PCs>:8080` 
+erreichbar, und der Einrichtungsassistent konnte durchlaufen werden.
+![Zammad Dashboard](screenshots/35-zammad-dashboard.png)
+
+Zusätzlich zu den Standardrollen (Admin, Agent, Customer) wurden die Rollen 
+**Support L1, L2 und L3** angelegt, um eine Eskalationsstruktur wie in einem 
+Service Desk abzubilden.
+![Rollen in Zammad](screenshots/36-zammad-rollen.png)
+
+<!-- Berechtigungen und Gruppenzugriff der Rollen nach der Konfiguration ergänzen -->
+
+### Troubleshooting: Weniger Speicherplatz als die virtuelle Platte hat
+
+**Symptom:** Das System zeigte nur rund 11 GB (`Usage of /: … of 11.21GB`), 
+obwohl die virtuelle Platte 25 GB groß ist.
+
+**Ursache:** Der Ubuntu-Installer legt das logische Volume standardmäßig nur 
+auf einen Teil der Platte, der Rest bleibt in der Volume Group ungenutzt.
+
+**Lösung:** `sudo lvextend -r -l +100%FREE /dev/ubuntu-vg/ubuntu-lv`. Die 
+Option `-r` vergrößert das Dateisystem gleich mit, im laufenden Betrieb und 
+ohne Neustart. Das Volume wuchs von 11,5 GiB auf 23 GiB, `df -h /` zeigt 
+anschließend 23 GB Gesamtgröße und 14 GB frei.
+![lvextend und df](screenshots/38-zammad-lvextend-speicher-erweitert.png)
+
+**Erkenntnis:** Der Installer-Standard nutzt nicht den gesamten Plattenplatz. 
+Gerade bei Anwendungen, die wachsen (Zammad mit Datenbank und Suchindex), 
+lohnt sich die Kontrolle mit `df -h` und `vgs` nach der Installation.
+
+## Nächste Schritte
+
+- Gruppen anlegen und den Rollen L1 bis L3 Gruppenzugriff zuweisen
+- Testbenutzer (Agent und Kunde) und Testtickets anlegen, Eskalation von L1 
+  an L2 durchspielen
+- Zugriff absichern: Zammad läuft derzeit über HTTP („Nicht sicher“ im 
+  Browser), ein vorgeschalteter Reverse Proxy mit TLS wäre der nächste Ausbau
+- SSH-Zugang härten (eigener Benutzername statt Standardnamen, 
+  Schlüsselauthentifizierung)
