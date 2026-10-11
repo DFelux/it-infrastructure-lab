@@ -429,8 +429,6 @@ Der Zugriff vom Notebook erfolgt nun über die IP des Mini-PCs:
 `ssh -p 2222 <benutzer>@<IP-des-Mini-PCs>` und 
 `http://<IP-des-Mini-PCs>:8080`.
 
-<!-- Dauer des Image-Downloads nach dem Wechsel auf NAT eintragen -->
-
 **Erkenntnis:** Bei NAT liegt die VM in einem eigenen privaten Netz (`10.0.2.x`) 
 hinter dem Host. Vom Notebook aus spricht man deshalb immer den Mini-PC an, 
 VirtualBox reicht die Verbindung per Portweiterleitung an die VM weiter. 
