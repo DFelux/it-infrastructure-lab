@@ -1,5 +1,7 @@
 Ziel dieses Projekts ist der praktische Aufbau und Betrieb einer kleinen IT-Infrastruktur im Homelab, um die theoretisch erlernten Inhalte aus dem Google IT Support Professional Certificate praktisch anzuwenden und zu dokumentieren. Das Projekt bildet typische Aufgaben eines Service-Desk-Mitarbeiters ab: Benutzerverwaltung über Active Directory, Support-Fallbearbeitung über ein Ticketsystem sowie grundlegende Windows-Client/Server-Administration.
 
+Das Lab wird schrittweise um Netzwerk- und Security-Komponenten erweitert (virtuelle Firewall, interne CA mit TLS, VLAN-Segmentierung, Netzwerkanalyse). Der aktuelle Stand steht im Abschnitt [Netzwerk- und Security-Erweiterung](#-netzwerk--und-security-erweiterung-in-arbeit).
+
 # Architektur
 <img width="1001" height="641" alt="image" src="https://github.com/user-attachments/assets/cbb7d7ce-84e4-461b-b655-7d440ce34069" />
 
@@ -15,6 +17,9 @@ Ziel dieses Projekts ist der praktische Aufbau und Betrieb einer kleinen IT-Infr
 - [x] Ticketsystem eingerichtet
 - [x] Ticketsystem-VM (Zammad) neu aufgebaut (v2), Weboberfläche erreichbar, Rollen Support L1–L3 angelegt
 - [ ] Zammad konfigurieren: Gruppen, Testbenutzer, Eskalationsablauf L1–L3
+- [ ] Virtuelle Firewall (OPNsense) für das interne Netz (geplant)
+- [ ] Interne CA und TLS für Zammad über Reverse Proxy (geplant)
+- [ ] VLAN-Segmentierung (geplant)
 
 
 # Was ich dabei gelernt habe
@@ -476,12 +481,38 @@ anschließend 23 GB Gesamtgröße und 14 GB frei.
 Gerade bei Anwendungen, die wachsen (Zammad mit Datenbank und Suchindex), 
 lohnt sich die Kontrolle mit `df -h` und `vgs` nach der Installation.
 
+## 🔐 Netzwerk- und Security-Erweiterung (in Arbeit)
+
+Ausbau des Labs um typische Komponenten einer abgesicherten 
+Unternehmensumgebung. Status: **geplant**, einzelne Bausteine werden nach 
+Abschluss mit Konfiguration, Screenshots und Troubleshooting dokumentiert. 
+Bisher läuft der Zugriff auf Zammad ungeschützt über HTTP und ohne zentrale 
+Firewall, genau das soll dieser Ausbau ändern.
+
+| Baustein | Ziel | Status |
+|---|---|---|
+| Virtuelle Firewall (OPNsense/pfSense) | Zentrale Absicherung des internen Netzes, Regelwerk, NAT/PAT, Portweiterleitung | ⬜ geplant |
+| Interne CA und TLS-Zertifikate | X.509-Zertifikate, TLS für Zammad über Reverse Proxy (nginx/Caddy) | ⬜ geplant |
+| VLAN-Segmentierung | Trennung von Server-, Client- und Management-Netz | ⬜ geplant |
+| Netzwerkanalyse | Paketmitschnitte mit tcpdump/Wireshark, DNS-Prüfung mit dig | ⬜ geplant |
+| Konfig-Backup und Restore | Sicherung und Wiederherstellung der Firewall-Konfiguration | ⬜ geplant |
+
+### Lernziele
+- Firewall-Regeln planen, testen und anhand der Logs nachvollziehen
+- Aufbau und Betrieb einer einfachen CA-Struktur, Ausstellen und Einbinden von Zertifikaten
+- Fehlersuche auf Netzwerk- und Zertifikatsebene
+
+### Dokumentation je Baustein
+Ziel · Aufbau (Netzwerkdiagramm) · Konfiguration · Tests · Troubleshooting · Screenshots
+
 ## Nächste Schritte
 
 - Gruppen anlegen und den Rollen L1 bis L3 Gruppenzugriff zuweisen
 - Testbenutzer (Agent und Kunde) und Testtickets anlegen, Eskalation von L1 
   an L2 durchspielen
 - Zugriff absichern: Zammad läuft derzeit über HTTP („Nicht sicher“ im 
-  Browser), ein vorgeschalteter Reverse Proxy mit TLS wäre der nächste Ausbau
+  Browser), ein vorgeschalteter Reverse Proxy mit TLS wäre der nächste Ausbau 
+  (siehe [Netzwerk- und Security-Erweiterung](#-netzwerk--und-security-erweiterung-in-arbeit))
+- Virtuelle Firewall aufsetzen und das interne Netz dahinter betreiben
 - SSH-Zugang härten (eigener Benutzername statt Standardnamen, 
   Schlüsselauthentifizierung)
