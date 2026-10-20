@@ -728,6 +728,45 @@ cd ~/zammad-docker-compose
 docker compose exec zammad-railsserver rails r "u = User.find_by(login: '<LOGIN>'); u.password = '<TEMPORAERES-PASSWORT>'; u.save!; puts 'ok'"
 ```
 
+### Troubleshooting: Zammad-Anmeldung scheitert mit „Verifizierung des Sicherheits-Tokens fehlgeschlagen“
+
+**Symptom:** Nach der Umstellung auf HTTPS zeigte `https://zammad.homelab.local` auf der Anmeldeseite einen Dialog „Die Verifizierung des Sicherheits-Tokens ist fehlgeschlagen“. Der Countdown lud die Seite neu, der Fehler kehrte zurück.
+![Fehlermeldung zum Sicherheits-Token](screenshots/62-zammad-csrf-token-fehler.png)
+
+**Diagnose:** Die Meldung stammt von der CSRF-Prüfung in Rails. Bei einem Reverse Proxy ist die häufigste Ursache ein falsch weitergereichtes Protokoll, deshalb habe ich beide Proxy-Stufen einzeln geprüft. Auf dem Host steckt die Konfiguration direkt in `nginx.conf`, nicht in `sites-enabled` (ein `grep` dort blieb leer). `nginx -T` zeigt die tatsächlich geladene Konfiguration, unabhängig vom Pfad:
+
+```bash
+sudo nginx -T 2>/dev/null | grep -nE "server_name|listen|proxy_|ssl_certificate"
+```
+![Konfiguration des äußeren nginx](screenshots/63-nginx-t-aeusserer-proxy.png)
+
+Der äußere nginx ist in Ordnung (`Host` und `X-Forwarded-Proto https` korrekt gesetzt). Hinter ihm läuft aber der nginx-Container des Zammad-Stacks, also eine zweite Proxy-Stufe:
+
+```bash
+docker compose exec zammad-nginx grep -rn "X-Forwarded\|proxy_set_header" /etc/nginx/
+```
+![Header-Konfiguration im nginx-Container](screenshots/64-zammad-nginx-container-scheme.png)
+
+In den Zeilen 46, 63 und 77 steht `proxy_set_header X-Forwarded-Proto $scheme;`.
+
+**Ursache:** Der äußere nginx terminiert TLS und spricht mit dem Container nur HTTP. Für den inneren nginx ist `$scheme` deshalb `http` und überschreibt das `https` der äußeren Stufe. Rails hielt die Anfrage für unverschlüsselt, die Prüfung scheiterte.
+
+**Lösung:** Der Stack kennt die Variable `NGINX_SERVER_SCHEME` (in der `docker-compose.yml` vorhanden). Sie wird in einer neuen `.env` gesetzt, der Container neu erstellt und die Wirkung geprüft:
+
+```bash
+cd ~/zammad-docker-compose
+grep -rn "NGINX_SERVER_SCHEME" .env docker-compose*.yml
+echo 'NGINX_SERVER_SCHEME=https' >> .env
+docker compose up -d zammad-nginx
+docker compose exec zammad-nginx grep -n "X-Forwarded-Proto" /etc/nginx/sites-available/default
+```
+![Variable gesetzt, Container neu erstellt, Header zeigt https](screenshots/65-zammad-nginx-server-scheme-fix.png)
+
+Danach funktioniert die Anmeldung im InPrivate-Fenster, nach dem Löschen der alten Cookies auch im normalen Browserfenster. Ein `restart` reicht nicht, die Variable wird erst beim Neuerstellen des Containers übernommen (`up -d`). Weil ich den `echo`-Befehl versehentlich mehrfach ausgeführt hatte, stand die Zeile mehrfach in der `.env`. Bereinigt und erneut geprüft:
+![.env bereinigt und Header erneut geprüft](screenshots/66-zammad-nginx-env-bereinigt.png)
+
+**Erkenntnis:** Bei mehreren hintereinandergeschalteten Proxys jede Stufe einzeln prüfen, denn eine innere Stufe kann Header der äußeren überschreiben. Ein InPrivate-Fenster trennt Cookie-Altlasten schnell von Konfigurationsfehlern. Vor dem Anhängen mit `>>` den Dateiinhalt mit `cat` prüfen.
+
 ### Sicherheitsbetrachtung
 
 - **CA-Key:** In der Praxis gehört der Root-Key offline und passphrasengeschützt aufbewahrt, idealerweise mit einer Zwischen-CA für die Ausstellung. Im Lab liegt er bewusst vereinfacht auf demselben Server.
@@ -773,7 +812,7 @@ Beim Aktivieren warnt ufw (`Command may disrupt existing ssh connections`). Best
 **1. Die Subnetz-Regel war wirkungslos.** Beim ersten Aktivieren standen `22/tcp` und `443/tcp` für „Anywhere“ bereits im Regelwerk, ufw meldete beim Hinzufügen von 443 `Skipping adding existing rule`. Die Regel `22/tcp` aus `192.168.56.0/24` schränkte damit nichts ein, SSH blieb von überall erreichbar.
 ![ufw nach dem ersten Aktivieren](screenshots/58-ufw-erste-regeln-redundante-ssh-regel.png)
 
-**2. Falsche Annahme zur Quelladresse.** Geplant war, dass SSH über die NAT-Weiterleitung mit der Quelladresse `10.0.2.2` (VirtualBox-NAT) ankommt, und eine Regel für `10.0.2.0/24` wurde ergänzt. Das Journal des SSH-Dienstes zeigt etwas anderes: `Accepted password for admin123 from 192.168.178.27`, also die Adresse des Notebooks. Weder das Lab-Subnetz noch `10.0.2.0/24` passten, der Login lief ausschließlich über die offene Regel. Hätte ich die offene Regel einfach gelöscht, wäre der Fernzugriff weg gewesen.
+**2. Falsche Annahme zur Quelladresse.** Geplant war, dass SSH über die NAT-Weiterleitung mit der Quelladresse `10.0.2.2` (VirtualBox-NAT) ankommt, und eine Regel für `10.0.2.0/24` wurde ergänzt. Das Journal des SSH-Dienstes zeigt etwas anderes: `Accepted password for <BENUTZER> from 192.168.178.27`, also die Adresse des Notebooks. Weder das Lab-Subnetz noch `10.0.2.0/24` passten, der Login lief ausschließlich über die offene Regel. Hätte ich die offene Regel einfach gelöscht, wäre der Fernzugriff weg gewesen.
 ![SSH-Journal mit Quelladresse](screenshots/59-ssh-journal-quelladresse-notebook.png)
 
 Die Regel wurde deshalb auf die tatsächliche Quelle ausgerichtet (`192.168.178.27`), die Regel für `10.0.2.0/24` danach wieder entfernt.
