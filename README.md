@@ -18,7 +18,7 @@ Das Lab wird schrittweise um Netzwerk- und Security-Komponenten erweitert (virtu
 - [x] Ticketsystem-VM (Zammad) neu aufgebaut (v2), Weboberfläche erreichbar, Rollen Support L1–L3 angelegt
 - [x] Interne CA und TLS für Zammad über Reverse Proxy (nginx), Root-CA per GPO an die Domäne verteilt
 - [ ] Zammad konfigurieren: Gruppen, Testbenutzer, Eskalationsablauf L1–L3
-- [ ] Host-Firewall (ufw) auf der Ticketsystem-VM
+- [x] Host-Firewall (ufw) auf der Ticketsystem-VM: Default deny, HTTPS offen, SSH nur von Lab-Netz und Admin-Notebook
 - [ ] Virtuelle Firewall (OPNsense) für das interne Netz (geplant)
 - [ ] VLAN-Segmentierung (geplant)
 
@@ -623,8 +623,6 @@ Die Zertifikathierarchie zeigt die Kette `Homelab Root CA` → `zammad.homelab.l
 Unter *Admin → System → Einstellungen → Basis* wurden der Domainname auf `zammad.homelab.local` und der HTTP-Typ auf `https` gesetzt. Zuvor zeigte die Anmeldeseite noch die alte Adresse mit Port 8080, und die Content-Security-Policy im Antwort-Header erlaubte nur diese Adresse. Die SystemID bleibt unverändert, sie steckt in jeder Ticketnummer.
 ![System-Adresse](screenshots/49-zammad-system-adresse.png)
 
-<!-- Host-Firewall (ufw): Abschnitt ergänzen, sobald umgesetzt. Geplante Regeln: default deny incoming, allow 22/tcp, allow 443/tcp. SSH nicht auf 192.168.56.0/24 beschränken, weil der Verkehr über die NAT-Weiterleitung von 10.0.2.2 ankommt. -->
-
 ### Troubleshooting: Host-Laufwerk voll (`VERR_DISK_FULL`)
 
 **Symptom:** Während des Betriebs erschien in VirtualBox die Meldung „The I/O cache encountered an error while updating data in medium ahci-0-0 (rc=VERR_DISK_FULL)“, die VM wurde pausiert.
@@ -735,22 +733,93 @@ docker compose exec zammad-railsserver rails r "u = User.find_by(login: '<LOGIN>
 - **CA-Key:** In der Praxis gehört der Root-Key offline und passphrasengeschützt aufbewahrt, idealerweise mit einer Zwischen-CA für die Ausstellung. Im Lab liegt er bewusst vereinfacht auf demselben Server.
 - **Zertifikatslaufzeit:** Das Serverzertifikat läuft nach 365 Tagen ab (19.10.2027). Die Erneuerung ist als wiederkehrende Aufgabe zu planen, die Root-CA gilt fünf Jahre.
 - **Port-Bindung:** Zammad lauscht nur auf `127.0.0.1:8080`. Das ist die eigentliche Absicherung, weil Docker veröffentlichte Ports an der Host-Firewall vorbei öffnet.
-- **Host-Firewall:** `ufw` ist eine Host-Firewall und ersetzt keine zentrale Firewall im Netz. Genau dafür ist die virtuelle Firewall (OPNsense) als nächster Ausbau vorgesehen.
+- **Host-Firewall:** `ufw` ist eingerichtet (siehe [Meilenstein](#meilenstein-host-firewall-ufw-auf-der-ticketsystem-vm)), ersetzt aber keine zentrale Firewall im Netz. Genau dafür ist die virtuelle Firewall (OPNsense) als nächster Ausbau vorgesehen.
 - **Geheimnisse:** Keine Zugangsdaten und Schlüssel in Screenshots oder im Repo. Eine `.gitignore` mit `*.key`, `*.srl` und `*.csr` verhindert, dass Schlüsselmaterial versehentlich committet wird.
+
+## Meilenstein: Host-Firewall (ufw) auf der Ticketsystem-VM
+
+Die Ticketsystem-VM nimmt eingehenden Verkehr nur noch auf den Ports an, die sie braucht: HTTPS für nginx und SSH für die Administration. Alles andere wird verworfen. `ufw` schützt dabei nur diese eine VM und ersetzt keine zentrale Firewall im Netz (siehe [Sicherheitsbetrachtung](#sicherheitsbetrachtung)).
+
+### Regelwerk
+
+Standardrichtlinie: `deny` für eingehenden, `allow` für ausgehenden und `deny` für weitergeleiteten Verkehr, Logging auf `low`.
+
+| Regel | Quelle | Begründung |
+|---|---|---|
+| `443/tcp` | Anywhere | HTTPS zu nginx, der einzige Weg zu Zammad |
+| `22/tcp` | `192.168.56.0/24` | SSH aus dem Lab-Netz (DC01, Client) |
+| `22/tcp` | `192.168.178.27` | SSH vom Admin-Notebook über die NAT-Weiterleitung (Mini-PC Port 2222 → VM Port 22) |
+
+Port 8080 ist bewusst nicht freigegeben. Zammad lauscht ohnehin nur auf `127.0.0.1:8080` (siehe [TLS, Schritt 4](#meilenstein-interne-ca-und-tls-für-zammad)), die Firewall ist also eine zweite, unabhängige Schutzebene.
+
+Das finale Regelwerk enthält ausschließlich IPv4-Regeln. IPv6 ist nicht freigegeben, der DNS-Eintrag `zammad.homelab.local` ist ein A-Record und alle Tests im Lab laufen über IPv4.
+
+Zielzustand, in dieser Reihenfolge umgesetzt (SSH-Regeln **vor** `ufw enable`):
+
+```bash
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow 443/tcp
+sudo ufw allow from 192.168.56.0/24 to any port 22 proto tcp
+sudo ufw allow from 192.168.178.27 to any port 22 proto tcp
+sudo ufw enable
+sudo ufw status verbose
+```
+
+Beim Aktivieren warnt ufw (`Command may disrupt existing ssh connections`). Bestehende Verbindungen laufen nach dem Aktivieren weiter, deshalb gehört jeder Test in eine **neue** Sitzung, und die alte bleibt als Rückfallebene offen.
+
+### Fehlersuche: Drei Stolpersteine
+
+**1. Die Subnetz-Regel war wirkungslos.** Beim ersten Aktivieren standen `22/tcp` und `443/tcp` für „Anywhere“ bereits im Regelwerk, ufw meldete beim Hinzufügen von 443 `Skipping adding existing rule`. Die Regel `22/tcp` aus `192.168.56.0/24` schränkte damit nichts ein, SSH blieb von überall erreichbar.
+![ufw nach dem ersten Aktivieren](screenshots/58-ufw-erste-regeln-redundante-ssh-regel.png)
+
+**2. Falsche Annahme zur Quelladresse.** Geplant war, dass SSH über die NAT-Weiterleitung mit der Quelladresse `10.0.2.2` (VirtualBox-NAT) ankommt, und eine Regel für `10.0.2.0/24` wurde ergänzt. Das Journal des SSH-Dienstes zeigt etwas anderes: `Accepted password for admin123 from 192.168.178.27`, also die Adresse des Notebooks. Weder das Lab-Subnetz noch `10.0.2.0/24` passten, der Login lief ausschließlich über die offene Regel. Hätte ich die offene Regel einfach gelöscht, wäre der Fernzugriff weg gewesen.
+![SSH-Journal mit Quelladresse](screenshots/59-ssh-journal-quelladresse-notebook.png)
+
+Die Regel wurde deshalb auf die tatsächliche Quelle ausgerichtet (`192.168.178.27`), die Regel für `10.0.2.0/24` danach wieder entfernt.
+
+**3. Überlappende Regeln.** Zwischenzeitlich standen die Einzeladresse und das Heimnetz `192.168.178.0/24` nebeneinander. Das /24 schließt die Einzeladresse ein, macht deren Regel überflüssig und öffnet SSH für jedes Gerät im Heimnetz. Beibehalten wurde nur die Einzeladresse. Gelöscht wird über `sudo ufw status numbered` und `sudo ufw delete <Nr>`, **von der höchsten Nummer abwärts**, weil sich die Nummern nach jedem Löschen verschieben.
+
+**Erkenntnis:** Die Quelladresse gehört aus dem Log gelesen, nicht angenommen. Und eine Regel ist erst belegt, wenn der Test auch dann besteht, wenn keine andere Regel mehr dafür einspringen kann.
+
+### Verifikation
+
+| Test | Erwartung | Ergebnis |
+|---|---|---|
+| SSH vom Notebook über Port 2222, neue Sitzung, nach dem Entfernen der offenen Regel | Login klappt | Journal: `Accepted password … from 192.168.178.27` |
+| SSH von DC01 (`192.168.56.10`) zur VM | Login klappt über die Regel für `192.168.56.0/24` | Login funktioniert |
+| Regelwerk | Keine `22/tcp`-Regel für „Anywhere“ | `ufw status verbose` zeigt nur die drei Regeln aus der Tabelle |
+| Port 443 von DC01 (`192.168.56.10`) | offen | `TcpTestSucceeded : True` |
+| Port 8080 von DC01 | geschlossen | `TcpTestSucceeded : False` |
+
+![Finaler ufw-Status und SSH-Login](screenshots/60-ufw-status-final-und-ssh-journal.png)
+
+![Port-Tests von DC01](screenshots/61-test-netconnection-8080-443.png)
+
+Zwei Anmerkungen zu den Ergebnissen:
+
+- Der Test auf Port 8080 zeigt das **Gesamtergebnis** beider Schutzebenen (Bindung an `127.0.0.1` und Default deny). Er sagt nicht, welche der beiden allein ausreichen würde.
+- `PingSucceeded : True` ist kein Widerspruch zu „Default deny“: ufw lässt ICMP-Echo über seine Standardregeln in `/etc/ufw/before.rules` zu, unabhängig von den eigenen Regeln. Für die Fehlersuche im Lab ist das gewollt.
+
+### Voraussetzungen und offene Punkte
+
+- **Feste Adresse für das Notebook:** Die SSH-Regel hängt an `192.168.178.27`. Damit sie dauerhaft trägt, ist die Adresse des Notebooks in der Fritzbox fest zugewiesen (statisch). Würde sie per DHCP wechseln, sperrte die Regel den Fernzugriff aus.
+- **Authentifizierung:** SSH läuft weiterhin mit Passwort. Die Firewall begrenzt, wer den Port erreicht, nicht wie sich jemand anmeldet. Schlüsselauthentifizierung ist der nächste Schritt (siehe [Nächste Schritte](#nächste-schritte)).
 
 ## 🔐 Netzwerk- und Security-Erweiterung (in Arbeit)
 
 Ausbau des Labs um typische Komponenten einer abgesicherten 
 Unternehmensumgebung. Status: **teilweise umgesetzt**, einzelne Bausteine werden nach 
 Abschluss mit Konfiguration, Screenshots und Troubleshooting dokumentiert. 
-Zammad ist inzwischen per TLS über eine interne CA abgesichert; eine zentrale 
+Zammad ist inzwischen per TLS über eine interne CA abgesichert, und die Ticketsystem-VM 
+filtert eingehenden Verkehr per Host-Firewall (ufw); eine zentrale 
 Firewall im Netz fehlt noch, genau das soll der weitere Ausbau ändern.
 
 | Baustein | Ziel | Status |
 |---|---|---|
 | Virtuelle Firewall (OPNsense/pfSense) | Zentrale Absicherung des internen Netzes, Regelwerk, NAT/PAT, Portweiterleitung | ⬜ geplant |
 | Interne CA und TLS-Zertifikate | X.509-Zertifikate, TLS für Zammad über Reverse Proxy (nginx) | ✅ umgesetzt, siehe [Meilenstein](#meilenstein-interne-ca-und-tls-für-zammad) |
-| Host-Firewall (ufw) | Eingehenden Verkehr auf der Ticketsystem-VM auf SSH und HTTPS beschränken | ⬜ geplant |
+| Host-Firewall (ufw) | Eingehenden Verkehr auf der Ticketsystem-VM auf SSH und HTTPS beschränken | ✅ umgesetzt, siehe [Meilenstein](#meilenstein-host-firewall-ufw-auf-der-ticketsystem-vm) |
 | VLAN-Segmentierung | Trennung von Server-, Client- und Management-Netz | ⬜ geplant |
 | Netzwerkanalyse | Paketmitschnitte mit tcpdump/Wireshark, DNS-Prüfung mit dig | ⬜ geplant |
 | Konfig-Backup und Restore | Sicherung und Wiederherstellung der Firewall-Konfiguration | ⬜ geplant |
@@ -768,7 +837,6 @@ Ziel · Aufbau (Netzwerkdiagramm) · Konfiguration · Tests · Troubleshooting �
 - Gruppen anlegen und den Rollen L1 bis L3 Gruppenzugriff zuweisen
 - Testbenutzer (Agent und Kunde) und Testtickets anlegen, Eskalation von L1 
   an L2 durchspielen
-- Host-Firewall `ufw` auf der Ticketsystem-VM einrichten und dokumentieren
 - Virtuelle Firewall aufsetzen und das interne Netz dahinter betreiben
 - SSH-Zugang härten (eigener Benutzername statt Standardnamen, 
   Schlüsselauthentifizierung)
