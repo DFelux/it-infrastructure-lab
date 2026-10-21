@@ -1,6 +1,8 @@
+# Mini-IT-Infrastruktur mit Service-Desk
+
 Ziel dieses Projekts ist der praktische Aufbau und Betrieb einer kleinen IT-Infrastruktur im Homelab, um die theoretisch erlernten Inhalte aus dem Google IT Support Professional Certificate praktisch anzuwenden und zu dokumentieren. Das Projekt bildet typische Aufgaben eines Service-Desk-Mitarbeiters ab: Benutzerverwaltung über Active Directory, Support-Fallbearbeitung über ein Ticketsystem sowie grundlegende Windows-Client/Server-Administration.
 
-Das Lab wird schrittweise um Netzwerk- und Security-Komponenten erweitert (virtuelle Firewall, interne CA mit TLS, VLAN-Segmentierung, Netzwerkanalyse). Der aktuelle Stand steht im Abschnitt [Netzwerk- und Security-Erweiterung](#-netzwerk--und-security-erweiterung-in-arbeit).
+Das Lab wird schrittweise um Netzwerk- und Security-Komponenten erweitert (virtuelle Firewall, interne CA mit TLS, VLAN-Segmentierung, Netzwerkanalyse). Der aktuelle Stand steht im Abschnitt [Netzwerk- und Security-Erweiterung](#-netzwerk--und-security-erweiterung-in-arbeit). Die umgesetzten Sicherheitsmaßnahmen sind zusätzlich NIS2 Art. 21 und ISO 27001 Anhang A gegenübergestellt, inklusive offener Lücken und einer Mini-Risikoanalyse: [SECURITY-COMPLIANCE.md](SECURITY-COMPLIANCE.md).
 
 # Architektur
 <img width="1001" height="641" alt="image" src="https://github.com/user-attachments/assets/cbb7d7ce-84e4-461b-b655-7d440ce34069" />
@@ -19,6 +21,8 @@ Das Lab wird schrittweise um Netzwerk- und Security-Komponenten erweitert (virtu
 - [x] Interne CA und TLS für Zammad über Reverse Proxy (nginx), Root-CA per GPO an die Domäne verteilt
 - [ ] Zammad konfigurieren: Gruppen, Testbenutzer, Eskalationsablauf L1–L3
 - [x] Host-Firewall (ufw) auf der Ticketsystem-VM: Default deny, HTTPS offen, SSH nur von Lab-Netz und Admin-Notebook
+- [x] Security-Controls- und Compliance-Mapping (NIS2 / ISO 27001), siehe [SECURITY-COMPLIANCE.md](SECURITY-COMPLIANCE.md)
+- [ ] Backup auf ein getrenntes Medium mit getesteter Wiederherstellung (geplant)
 - [ ] Virtuelle Firewall (OPNsense) für das interne Netz (geplant)
 - [ ] VLAN-Segmentierung (geplant)
 
@@ -128,7 +132,9 @@ korrekt im Container „Computers" der Active-Directory-Struktur auf dem Server.
 ![Snapshot-Baum](screenshots/01-vm-snapshot-baum.png)
 
 Jeder wichtige Meilenstein wurde als Snapshot gesichert – von der 
-Frischinstallation bis zum Domänenbeitritt des Clients.
+Frischinstallation bis zum Domänenbeitritt des Clients. Die Snapshots liegen 
+auf demselben Datenträger wie die VMs und ersetzen daher kein Backup 
+(siehe [Sicherheitsbetrachtung](#sicherheitsbetrachtung)).
 
 ### Server- und Client-VM im Überblick
 ![VM-Details Server](screenshots/02-vm-details-server.png)
@@ -774,6 +780,7 @@ Danach funktioniert die Anmeldung im InPrivate-Fenster, nach dem Löschen der al
 - **Port-Bindung:** Zammad lauscht nur auf `127.0.0.1:8080`. Das ist die eigentliche Absicherung, weil Docker veröffentlichte Ports an der Host-Firewall vorbei öffnet.
 - **Host-Firewall:** `ufw` ist eingerichtet (siehe [Meilenstein](#meilenstein-host-firewall-ufw-auf-der-ticketsystem-vm)), ersetzt aber keine zentrale Firewall im Netz. Genau dafür ist die virtuelle Firewall (OPNsense) als nächster Ausbau vorgesehen.
 - **Geheimnisse:** Keine Zugangsdaten und Schlüssel in Screenshots oder im Repo. Eine `.gitignore` mit `*.key`, `*.srl` und `*.csr` verhindert, dass Schlüsselmaterial versehentlich committet wird.
+- **Backup:** Die VM-Snapshots liegen auf demselben Datenträger wie die VMs und ersetzen kein Backup. Der Vorfall mit dem vollen Host-Laufwerk (siehe [VERR_DISK_FULL](#troubleshooting-host-laufwerk-voll-verr_disk_full)) hat gezeigt, wie verwundbar das ist. Die Einordnung aller Maßnahmen und Lücken steht in [SECURITY-COMPLIANCE.md](SECURITY-COMPLIANCE.md).
 
 ## Meilenstein: Host-Firewall (ufw) auf der Ticketsystem-VM
 
@@ -859,20 +866,23 @@ Firewall im Netz fehlt noch, genau das soll der weitere Ausbau ändern.
 | Virtuelle Firewall (OPNsense/pfSense) | Zentrale Absicherung des internen Netzes, Regelwerk, NAT/PAT, Portweiterleitung | ⬜ geplant |
 | Interne CA und TLS-Zertifikate | X.509-Zertifikate, TLS für Zammad über Reverse Proxy (nginx) | ✅ umgesetzt, siehe [Meilenstein](#meilenstein-interne-ca-und-tls-für-zammad) |
 | Host-Firewall (ufw) | Eingehenden Verkehr auf der Ticketsystem-VM auf SSH und HTTPS beschränken | ✅ umgesetzt, siehe [Meilenstein](#meilenstein-host-firewall-ufw-auf-der-ticketsystem-vm) |
+| Compliance-Mapping (NIS2 / ISO 27001) | Maßnahmen den Anforderungen zuordnen, Lücken und Risiken bewerten | ✅ umgesetzt, siehe [SECURITY-COMPLIANCE.md](SECURITY-COMPLIANCE.md) |
 | VLAN-Segmentierung | Trennung von Server-, Client- und Management-Netz | ⬜ geplant |
 | Netzwerkanalyse | Paketmitschnitte mit tcpdump/Wireshark, DNS-Prüfung mit dig | ⬜ geplant |
-| Konfig-Backup und Restore | Sicherung und Wiederherstellung der Firewall-Konfiguration | ⬜ geplant |
+| Backup und Restore | Sicherung der VMs und Konfigurationen (inkl. Firewall) auf ein getrenntes Medium, Wiederherstellung testen | ⬜ geplant |
 
 ### Lernziele
 - Firewall-Regeln planen, testen und anhand der Logs nachvollziehen
 - Aufbau und Betrieb einer einfachen CA-Struktur, Ausstellen und Einbinden von Zertifikaten
 - Fehlersuche auf Netzwerk- und Zertifikatsebene
+- Technische Maßnahmen Sicherheitsanforderungen (NIS2, ISO 27001) zuordnen und Restrisiken bewerten
 
 ### Dokumentation je Baustein
 Ziel · Aufbau (Netzwerkdiagramm) · Konfiguration · Tests · Troubleshooting · Screenshots
 
 ## Nächste Schritte
 
+- Backup auf ein getrenntes Medium einrichten und eine Wiederherstellung testen (höchstes Risiko laut [Risikoanalyse](SECURITY-COMPLIANCE.md#3-mini-risikoanalyse))
 - Gruppen anlegen und den Rollen L1 bis L3 Gruppenzugriff zuweisen
 - Testbenutzer (Agent und Kunde) und Testtickets anlegen, Eskalation von L1 
   an L2 durchspielen
