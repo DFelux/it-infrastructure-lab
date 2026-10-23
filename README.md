@@ -1,18 +1,26 @@
 # Mini-IT-Infrastruktur mit Service-Desk
 
+> **Kurzfassung für Eilige**
+> - **Umgebung:** Windows Server 2022 (DC01, AD DS, DNS, GPO), Windows-11-Client in der Domäne, Ubuntu Server mit Zammad (Docker Compose)
+> - **Security:** eigene Root-CA, TLS über nginx-Reverse-Proxy, Root-Zertifikat per GPO verteilt, Host-Firewall (ufw, default deny)
+> - **Compliance:** Maßnahmen gegen NIS2 Art. 21 und ISO 27001 Anhang A gemappt, inkl. Mini-Risikoanalyse → [SECURITY-COMPLIANCE.md](SECURITY-COMPLIANCE.md)
+> - **Troubleshooting:** 25 real aufgetretene Fehler mit Ursache, Lösung und Nachweis dokumentiert
+>
+> **Ausgewählte Fälle:** [SSH trotz korrekter Konfiguration nicht erreichbar](#troubleshooting-vm-per-ssh-vom-notebook-nicht-erreichbar-obwohl-alles-korrekt-konfiguriert-ist) · [CSRF-Fehler bei der Zammad-Anmeldung](#troubleshooting-zammad-anmeldung-scheitert-mit-verifizierung-des-sicherheits-tokens-fehlgeschlagen) · [IP-Adresskonflikt Host/Server](#troubleshooting-ip-adresskonflikt-zwischen-host-und-server-vm)
+
 Ziel dieses Projekts ist der praktische Aufbau und Betrieb einer kleinen IT-Infrastruktur im Homelab, um die theoretisch erlernten Inhalte aus dem Google IT Support Professional Certificate praktisch anzuwenden und zu dokumentieren. Das Projekt bildet typische Aufgaben eines Service-Desk-Mitarbeiters ab: Benutzerverwaltung über Active Directory, Support-Fallbearbeitung über ein Ticketsystem sowie grundlegende Windows-Client/Server-Administration.
 
 Das Lab wird schrittweise um Netzwerk- und Security-Komponenten erweitert (virtuelle Firewall, interne CA mit TLS, VLAN-Segmentierung, Netzwerkanalyse). Der aktuelle Stand steht im Abschnitt [Netzwerk- und Security-Erweiterung](#-netzwerk--und-security-erweiterung-in-arbeit). Die umgesetzten Sicherheitsmaßnahmen sind zusätzlich NIS2 Art. 21 und ISO 27001 Anhang A gegenübergestellt, inklusive offener Lücken und einer Mini-Risikoanalyse: [SECURITY-COMPLIANCE.md](SECURITY-COMPLIANCE.md).
 
-# Architektur
+## Architektur
 <img width="1001" height="641" alt="image" src="https://github.com/user-attachments/assets/cbb7d7ce-84e4-461b-b655-7d440ce34069" />
 
 
-# Umgesetzter Stand
+## Umgesetzter Stand
 - [x] Windows Server 2022 installiert und konfiguriert
 - [x] Active Directory Domain Services (AD DS), Domäne homelab.local
 - [x] OU-Struktur (IT, Support, Vertrieb) angelegt
-- [x] Erster Benutzer angelegt
+- [x] Benutzer und Gruppen in der OU-Struktur angelegt
 - [x] Windows-11-Client installiert, Netzwerk konfiguriert
 - [x] Server und Client können sich gegenseitig erreichen (Ping erfolgreich)
 - [x] Windows-Client in Domäne aufgenommen
@@ -27,7 +35,7 @@ Das Lab wird schrittweise um Netzwerk- und Security-Komponenten erweitert (virtu
 - [ ] VLAN-Segmentierung (geplant)
 
 
-# Was ich dabei gelernt habe
+## Was ich dabei gelernt habe
 
 Beim Einrichten des Windows Servers bin ich auf ein Netzwerkproblem gestoßen: 
 der zweite Netzwerkadapter war in VirtualBox nicht aktiviert, wodurch die 
