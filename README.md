@@ -21,6 +21,8 @@ Das Lab wird schrittweise um Netzwerk- und Security-Komponenten erweitert (virtu
 - [x] Active Directory Domain Services (AD DS), Domäne homelab.local
 - [x] OU-Struktur (IT, Support, Vertrieb) angelegt
 - [x] Benutzer und Gruppen in der OU-Struktur angelegt
+- [x] OU-Struktur nach Objekttyp umgebaut, Admin- und Support-Konten getrennt (Rollenmodell in Arbeit)
+- [ ] Rollenmodell: AGDLP-Gruppen, Delegation L1/L2, lokale Adminrechte per GPO, Remoteverwaltung, LAPS
 - [x] Windows-11-Client installiert, Netzwerk konfiguriert
 - [x] Server und Client können sich gegenseitig erreichen (Ping erfolgreich)
 - [x] Windows-Client in Domäne aufgenommen
@@ -860,6 +862,70 @@ Zwei Anmerkungen zu den Ergebnissen:
 - **Feste Adresse für das Notebook:** Die SSH-Regel hängt an `192.168.178.27`. Damit sie dauerhaft trägt, ist die Adresse des Notebooks in der Fritzbox fest zugewiesen (statisch). Würde sie per DHCP wechseln, sperrte die Regel den Fernzugriff aus.
 - **Authentifizierung:** SSH läuft weiterhin mit Passwort. Die Firewall begrenzt, wer den Port erreicht, nicht wie sich jemand anmeldet. Schlüsselauthentifizierung ist der nächste Schritt (siehe [Nächste Schritte](#nächste-schritte)).
 
+## Meilenstein: AD-Rollenmodell nach Least Privilege (in Arbeit)
+
+Bisher lief die Verwaltung über ein einziges Administratorkonto. Ziel ist ein Rollenmodell wie in einer echten Umgebung: getrennte Konten für Administration und Support, Rechte nur so weit wie nötig und ausschließlich über Gruppen vergeben (AGDLP).
+
+### Rollen
+
+| Konto | Rolle | Globale Gruppe | Darf | Darf nicht |
+|---|---|---|---|---|
+| `df-support-l1` | 1st Level | `GG-Support-L1` | Kennwort zurücksetzen, Konto entsperren (OU *Benutzer*) | Konten anlegen/löschen, Serverzugriff |
+| `df-support-l2` | 2nd Level | `GG-Support-L2` | zusätzlich Benutzer anlegen/deaktivieren, Gruppen ändern, Remote auf Clients | Server-Administration, GPOs |
+| `df-admin` | Server-Admin | `GG-Server-Admins` | Lokaler Admin auf Member-Servern, Remoteverwaltung | Domain Admin, Alltagsanmeldung |
+| `df-test` | Standardbenutzer | `GG-Mitarbeiter` | Normale Anmeldung | Admin-Werkzeuge, Remote |
+
+Die Rechte hängen an domänenlokalen Gruppen (`DL-OU-Benutzer-PwReset`, `DL-OU-Benutzer-Verwalten`, `DL-Server-LocalAdmin`, `DL-Client-Remote`), in die die globalen Rollengruppen verschachtelt werden. Ein Rollenwechsel ist damit nur eine Änderung der Gruppenmitgliedschaft.
+
+### OU-Struktur: vorher und nachher
+
+Vorher lagen Abteilungs-OUs und Gruppen direkt in der Domänenwurzel.
+![OU-Struktur vorher](screenshots/67-ad-ou-struktur-vorher.png)
+
+Umgebaut wurde auf eine eigene Oberebene `_Homelab` mit Trennung nach Objekttyp:
+
+```
+homelab.local
+ +- _Homelab
+     +- Admins      Konten mit erweiterten Rechten
+     +- Benutzer    IT, Vertrieb, Support (normale Mitarbeiter)
+     +- Gruppen     globale und domänenlokale Gruppen
+     +- Server
+     +- Clients
+```
+
+![Admin-Konten getrennt](screenshots/69-ad-ou-admins-getrennt.png)
+![Benutzer nach Abteilungen](screenshots/70-ad-ou-benutzer-support.png)
+![Gruppen in eigener OU](screenshots/71-ad-ou-gruppen.png)
+
+Designentscheidungen:
+
+- **Konten mit Verwaltungsrechten liegen außerhalb des Bereichs, den sie verwalten.** Die Delegation für den 1st Level greift auf *Benutzer*. Läge `df-support-l1` selbst dort, könnte es Kennwörter anderer Support- oder Admin-Konten zurücksetzen und sich so höhere Rechte verschaffen.
+- **Konten und Gruppen getrennt**, damit Rechte und Gruppenrichtlinien gezielt nach Objekttyp vergeben werden können.
+- **Eingebaute Objekte bleiben in ihren Standardcontainern** (z. B. *Domain Admins* in *Users*). Ein Zwischenstand, in dem ich die Gruppe mitverschoben hatte, wurde zurückgenommen.
+![Zwischenstand beim Umbau](screenshots/68-ad-ou-umbau-zwischenstand.png)
+- **Erst verstehen, dann automatisieren:** Die Struktur entstand per GUI, Gruppen, Konten und Verschachtelung folgen per PowerShell-Skript mit CSV-Datei (Daten und Logik getrennt, mehrfach ausführbar ohne Fehler).
+
+### Troubleshooting: „Zugriff verweigert“ beim Verschieben von OUs
+
+Beim Umbau ließen sich OUs nicht verschieben, obwohl das Konto Domain-Admin-Rechte hatte. Ursache war der Schutz vor versehentlichem Löschen, den ADUC für neue OUs standardmäßig setzt. Verschieben ist für AD intern Löschen am alten und Anlegen am neuen Ort, deshalb blockiert der Schutz auch das Verschieben. Sichtbar wird die Einstellung erst unter *Ansicht → Erweiterte Features* im Reiter *Objekt*.
+
+```powershell
+Set-ADOrganizationalUnit "OU=Support,DC=homelab,DC=local" -ProtectedFromAccidentalDeletion $false
+Move-ADObject "OU=Support,DC=homelab,DC=local" -TargetPath "OU=Benutzer,OU=_Homelab,DC=homelab,DC=local"
+```
+
+Danach wird der Schutz am neuen Ort wieder gesetzt.
+
+**Erkenntnis:** „Zugriff verweigert“ heißt in Active Directory nicht automatisch „fehlende Rechte“.
+
+### Offen
+
+- Gruppen per PowerShell anlegen und verschachteln, `GG-server-admin` in `GG-Server-Admins` umbenennen
+- Delegation für L1/L2 auf die OU *Benutzer*
+- Lokale Adminrechte und WinRM per GPO, Windows LAPS
+- Testmatrix mit Positiv- und Negativtests (z. B. `df-support-l1` darf ein Kennwort zurücksetzen, aber kein Konto löschen)
+
 ## 🔐 Netzwerk- und Security-Erweiterung (in Arbeit)
 
 Ausbau des Labs um typische Komponenten einer abgesicherten 
@@ -890,6 +956,7 @@ Ziel · Aufbau (Netzwerkdiagramm) · Konfiguration · Tests · Troubleshooting �
 
 ## Nächste Schritte
 
+- AD-Rollenmodell abschließen (siehe [Meilenstein](#meilenstein-ad-rollenmodell-nach-least-privilege-in-arbeit))
 - Backup auf ein getrenntes Medium einrichten und eine Wiederherstellung testen (höchstes Risiko laut [Risikoanalyse](SECURITY-COMPLIANCE.md#3-mini-risikoanalyse))
 - Gruppen anlegen und den Rollen L1 bis L3 Gruppenzugriff zuweisen
 - Testbenutzer (Agent und Kunde) und Testtickets anlegen, Eskalation von L1 
