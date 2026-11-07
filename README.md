@@ -919,6 +919,20 @@ Danach wird der Schutz am neuen Ort wieder gesetzt.
 
 **Erkenntnis:** „Zugriff verweigert“ heißt in Active Directory nicht automatisch „fehlende Rechte“.
 
+### Vorgehen und nächste Ausbaustufe
+
+Die OU-Struktur wurde bewusst noch direkt auf DC01 über die grafische Oberfläche angelegt. Im nächsten Schritt wird die Arbeitsweise so umgestellt, wie sie im Betrieb üblich ist: **Server werden nicht mehr durch Anmeldung am Server verwaltet, sondern vom Admin-Arbeitsplatz aus.**
+
+| Schritt | Umsetzung | Status |
+|---|---|---|
+| Verwaltungswerkzeuge auf dem Client | RSAT (ADUC, DNS, GPMC, Server-Manager), DC01 im Server-Manager hinzugefügt | ⬜ geplant |
+| Trennung Alltag / Administration | Anmeldung am Client mit normalem Konto, Werkzeuge per „Als anderer Benutzer ausführen“ mit `df-admin` | ⬜ geplant |
+| Anmeldung an Servern einschränken | GPO: lokale Anmeldung und RDP an Servern nur für Admin-Gruppen | ⬜ geplant |
+| Massenanlage per PowerShell | Gruppen, Konten und Verschachtelung per Skript mit CSV, remote vom Client ausgeführt | ⬜ geplant |
+| Nachweis | Negativtest: `df-support-l1` und `df-test` können sich nicht an DC01 anmelden | ⬜ geplant |
+
+In einer produktiven Umgebung übernimmt diese Rolle ein eigener, gehärteter Admin-Arbeitsplatz (Privileged Access Workstation). Im Lab ist das der Windows-11-Client.
+
 ### Offen
 
 - Gruppen per PowerShell anlegen und verschachteln, `GG-server-admin` in `GG-Server-Admins` umbenennen
