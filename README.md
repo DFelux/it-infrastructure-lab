@@ -12,6 +12,21 @@ Ziel dieses Projekts ist der praktische Aufbau und Betrieb einer kleinen IT-Infr
 
 Das Lab wird schrittweise um Netzwerk- und Security-Komponenten erweitert (virtuelle Firewall, interne CA mit TLS, VLAN-Segmentierung, Netzwerkanalyse). Der aktuelle Stand steht im Abschnitt [Netzwerk- und Security-Erweiterung](#-netzwerk--und-security-erweiterung-in-arbeit). Die umgesetzten Sicherheitsmaßnahmen sind zusätzlich NIS2 Art. 21 und ISO 27001 Anhang A gegenübergestellt, inklusive offener Lücken und einer Mini-Risikoanalyse: [SECURITY-COMPLIANCE.md](SECURITY-COMPLIANCE.md).
 
+## Entwicklungsverlauf
+
+Das Lab wächst schrittweise. Jede Stufe bringt es näher an eine reale Unternehmensumgebung: erst lauffähig machen, dann absichern, dann so betreiben, wie es im Alltag üblich ist.
+
+| Zeitraum | Ausbaustufe | Was dazukam | Näher an der Realität, weil … |
+|---|---|---|---|
+| Juli 2026 | Grundaufbau | Windows Server 2022 (DC01), AD DS, DNS, OU-Struktur, Windows-11-Client in der Domäne | Zentrale Benutzer- und Geräteverwaltung statt Einzelrechner |
+| Aug. 2026 | Service Desk | Ticketsystem eingerichtet | Support läuft über Tickets statt auf Zuruf |
+| Okt. 2026 | Neuaufbau Ticketsystem | Zammad v2 (Ubuntu, Docker Compose), Rollen L1–L3 | Wiederholbarer Aufbau, Supportstufen wie im echten Service Desk |
+| Okt. 2026 | Absicherung | Interne Root-CA, TLS über nginx, Root-Zertifikat per GPO, Host-Firewall (ufw) | Verschlüsselte Dienste, zentral verteiltes Vertrauen, Default deny |
+| Okt. 2026 | Compliance | Mapping auf NIS2 Art. 21 und ISO 27001, Mini-Risikoanalyse | Maßnahmen werden begründet und Lücken benannt |
+| Nov. 2026 | Rollenmodell | OU-Umbau nach Objekttyp, getrennte Admin- und Support-Konten | Least Privilege statt eines Administratorkontos für alles |
+| geplant | Betrieb wie im Alltag | Verwaltung vom Admin-Arbeitsplatz (RSAT), Delegation, Automatisierung per PowerShell, LAPS | Keine Anmeldung direkt am Server, Rechte nur pro Aufgabe |
+| geplant | Netzwerk | Virtuelle Firewall, VLANs, Backup mit getesteter Wiederherstellung | Segmentierung und Ausfallsicherheit |
+
 ## Architektur
 <img width="1001" height="641" alt="image" src="https://github.com/user-attachments/assets/cbb7d7ce-84e4-461b-b655-7d440ce34069" />
 
