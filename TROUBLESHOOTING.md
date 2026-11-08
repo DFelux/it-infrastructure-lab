@@ -2,7 +2,7 @@
 
 [← Zur Übersicht](README.md)
 
-Alle 25 dokumentierten Fehlerfälle mit Ursache, Lösung und Nachweis, nach Teilprojekt sortiert. Jeder Link führt direkt zum Fall.
+Alle 26 dokumentierten Fehlerfälle mit Ursache, Lösung und Nachweis, nach Teilprojekt sortiert. Jeder Link führt direkt zum Fall.
 
 
 ## Active Directory, Client und Grundaufbau
@@ -10,6 +10,7 @@ Alle 25 dokumentierten Fehlerfälle mit Ursache, Lösung und Nachweis, nach Teil
 - [Schwarzer Bildschirm bei Windows-11-Client-VM](docs/01-active-directory.md#troubleshooting-schwarzer-bildschirm-bei-windows-11-client-vm)
 - [IP-Adresskonflikt zwischen Host und Server-VM](docs/01-active-directory.md#troubleshooting-ip-adresskonflikt-zwischen-host-und-server-vm)
 - [„Zugriff verweigert“ beim Verschieben von OUs](docs/01-active-directory.md#troubleshooting-zugriff-verweigert-beim-verschieben-von-ous)
+- [Server-Admin-Konto hatte über vordefinierte Gruppe DC-Vollzugriff](docs/01-active-directory.md#2-befund-server-admin-konto-hatte-über-eine-unauffällige-gruppe-dc-vollzugriff)
 
 ## Ticketsystem Zammad (Ubuntu + Docker)
 
