@@ -32,6 +32,24 @@ Das Lab wächst schrittweise. Jede Stufe bringt es näher an eine reale Unterneh
 ## Architektur
 <img width="1001" height="641" alt="image" src="https://github.com/user-attachments/assets/cbb7d7ce-84e4-461b-b655-7d440ce34069" />
 
+**Datenfluss im Überblick:**
+
+```mermaid
+flowchart LR
+    Client["Windows-11-Client<br/>Domänenmitglied"]
+    DC["DC01<br/>AD DS · DNS · GPO"]
+    subgraph VM["Ubuntu-VM (Ticketsystem)"]
+        direction LR
+        FW["ufw<br/>Default deny"] --> Proxy["nginx<br/>Reverse Proxy · TLS"] --> Zammad["Zammad<br/>Docker Compose"]
+        CA["Interne Root-CA<br/>OpenSSL"]
+    end
+    Client -- "Anmeldung · DNS" --> DC
+    Client -- "HTTPS 443" --> FW
+    CA -. "Serverzertifikat" .-> Proxy
+    CA -. "Root-Zertifikat" .-> DC
+    DC -. "verteilt Root-CA per GPO" .-> Client
+```
+
 
 ## Umgesetzter Stand
 - [x] Windows Server 2022 installiert und konfiguriert
