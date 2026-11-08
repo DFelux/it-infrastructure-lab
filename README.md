@@ -30,26 +30,41 @@ Das Lab wächst schrittweise. Jede Stufe bringt es näher an eine reale Unterneh
 | geplant | Netzwerk | Virtuelle Firewall, VLANs, Backup mit getesteter Wiederherstellung | Segmentierung und Ausfallsicherheit |
 
 ## Architektur
-<img width="1001" height="641" alt="image" src="https://github.com/user-attachments/assets/cbb7d7ce-84e4-461b-b655-7d440ce34069" />
-
-**Datenfluss im Überblick:**
 
 ```mermaid
 flowchart LR
-    Client["Windows-11-Client<br/>Domänenmitglied"]
-    DC["DC01<br/>AD DS · DNS · GPO"]
-    subgraph VM["Ubuntu-VM (Ticketsystem)"]
-        direction LR
-        FW["ufw<br/>Default deny"] --> Proxy["nginx<br/>Reverse Proxy · TLS"] --> Zammad["Zammad<br/>Docker Compose"]
-        CA["Interne Root-CA<br/>OpenSSL"]
+    subgraph HOME["Heimnetz 192.168.178.0/24"]
+        NB["Admin-Notebook<br/>.27"]
+        HOST["Mini-PC · VirtualBox-Host<br/>NAT 2222 → VM:22"]
     end
-    Client -- "Anmeldung · DNS" --> DC
-    Client -- "HTTPS 443" --> FW
-    CA -. "Serverzertifikat" .-> Proxy
+
+    subgraph LAB["Host-only-Netz 192.168.56.0/24 · Domäne homelab.local"]
+        DC["DC01 · .10<br/>Windows Server 2022<br/>AD DS · DNS · GPO"]
+        CL["Windows-11-Client · .20<br/>Domänenmitglied"]
+        subgraph VM["Ubuntu-VM · .30 · Ticketsystem"]
+            direction LR
+            FW["ufw<br/>Default deny"] --> NG["nginx<br/>TLS-Terminierung"] -- "127.0.0.1:8080" --> ZM["Zammad<br/>Docker Compose"]
+            CA["Interne Root-CA<br/>OpenSSL"]
+        end
+    end
+
+    CL -- "Anmeldung · DNS" --> DC
+    CL -- "HTTPS 443<br/>zammad.homelab.local" --> FW
+    DC -- "SSH 22 (Lab-Netz)" --> FW
+    NB -- "SSH" --> HOST -- "22" --> FW
+    CA -. "Serverzertifikat" .-> NG
     CA -. "Root-Zertifikat" .-> DC
-    DC -. "verteilt Root-CA per GPO" .-> Client
+    DC -. "GPO verteilt Root-CA" .-> CL
 ```
 
+| Pfad | Freigabe in ufw | Zweck |
+|---|---|---|
+| Client → nginx | `443/tcp` | einziger Weg zu Zammad, verschlüsselt |
+| Lab-Netz → VM | `22/tcp` von `192.168.56.0/24` | Administration aus dem Lab |
+| Admin-Notebook → VM | `22/tcp` von `192.168.178.27` | Administration über die NAT-Weiterleitung |
+| Zammad | nicht freigegeben | lauscht nur auf `127.0.0.1:8080`, erreichbar nur über nginx |
+
+Details: [Interne CA & TLS](docs/03-pki-tls.md) · [Host-Firewall](docs/04-host-firewall.md)
 
 ## Umgesetzter Stand
 - [x] Windows Server 2022 installiert und konfiguriert
