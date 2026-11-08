@@ -32,29 +32,31 @@ Das Lab wächst schrittweise. Jede Stufe bringt es näher an eine reale Unterneh
 ## Architektur
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph HOME["Heimnetz 192.168.178.0/24"]
-        NB["Admin-Notebook<br/>.27"]
-        HOST["Mini-PC · VirtualBox-Host<br/>NAT 2222 → VM:22"]
+        direction LR
+        NB["Admin-Notebook .27"] -- "SSH" --> HOST["Mini-PC (VirtualBox)<br/>NAT 2222 → 22"]
     end
 
-    subgraph LAB["Host-only-Netz 192.168.56.0/24 · Domäne homelab.local"]
-        DC["DC01 · .10<br/>Windows Server 2022<br/>AD DS · DNS · GPO"]
-        CL["Windows-11-Client · .20<br/>Domänenmitglied"]
-        subgraph VM["Ubuntu-VM · .30 · Ticketsystem"]
-            direction LR
-            FW["ufw<br/>Default deny"] --> NG["nginx<br/>TLS-Terminierung"] -- "127.0.0.1:8080" --> ZM["Zammad<br/>Docker Compose"]
-            CA["Interne Root-CA<br/>OpenSSL"]
+    subgraph LAB["Lab-Netz 192.168.56.0/24 · homelab.local"]
+        direction TB
+        CL["Windows-11-Client .20"]
+        DC["DC01 .10<br/>AD DS · DNS · GPO"]
+        subgraph VM["Ubuntu-VM .30"]
+            direction TB
+            FW["ufw · Default deny"] --> NG["nginx · TLS"]
+            NG -- "127.0.0.1:8080" --> ZM["Zammad"]
+            CA["Root-CA (OpenSSL)"]
         end
     end
 
     CL -- "Anmeldung · DNS" --> DC
-    CL -- "HTTPS 443<br/>zammad.homelab.local" --> FW
-    DC -- "SSH 22 (Lab-Netz)" --> FW
-    NB -- "SSH" --> HOST -- "22" --> FW
+    CL -- "HTTPS 443" --> FW
+    DC -- "SSH" --> FW
+    HOST -- "SSH" --> FW
     CA -. "Serverzertifikat" .-> NG
     CA -. "Root-Zertifikat" .-> DC
-    DC -. "GPO verteilt Root-CA" .-> CL
+    DC -. "GPO: Root-CA" .-> CL
 ```
 
 | Pfad | Freigabe in ufw | Zweck |
