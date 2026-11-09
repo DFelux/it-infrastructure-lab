@@ -25,7 +25,7 @@ Das Lab wächst schrittweise. Jede Stufe bringt es näher an eine reale Unterneh
 | Okt. 2026 | Neuaufbau Ticketsystem | Zammad v2 (Ubuntu, Docker Compose), Rollen L1–L3 | Wiederholbarer Aufbau, Supportstufen wie im echten Service Desk |
 | Okt. 2026 | Absicherung | Interne Root-CA, TLS über nginx, Root-Zertifikat per GPO, Host-Firewall (ufw) | Verschlüsselte Dienste, zentral verteiltes Vertrauen, Default deny |
 | Okt. 2026 | Compliance | Mapping auf NIS2 Art. 21 und ISO 27001, Mini-Risikoanalyse | Maßnahmen werden begründet und Lücken benannt |
-| Nov. 2026 | Rollenmodell | OU-Umbau nach Objekttyp, getrennte Admin- und Support-Konten, RSAT-Fernverwaltung, AGDLP-Delegation für den 1st Level mit Positiv-/Negativtests | Least Privilege statt eines Administratorkontos für alles |
+| Nov. 2026 | Rollenmodell | OU-Umbau nach Objekttyp, getrennte Admin- und Support-Konten, RSAT-Fernverwaltung, AGDLP-Delegation für den 1st Level (Kennwort-Reset, Entsperren) mit Positiv-/Negativtests, Kontosperrungsrichtlinie | Least Privilege statt eines Administratorkontos für alles |
 | geplant | Betrieb wie im Alltag | Verwaltung vom Admin-Arbeitsplatz (RSAT), Delegation, Automatisierung per PowerShell, LAPS | Keine Anmeldung direkt am Server, Rechte nur pro Aufgabe |
 | geplant | Netzwerk | Virtuelle Firewall, VLANs, Backup mit getesteter Wiederherstellung | Segmentierung und Ausfallsicherheit |
 
@@ -76,7 +76,9 @@ Details: [Interne CA & TLS](docs/03-pki-tls.md) · [Host-Firewall](docs/04-host-
 - [x] OU-Struktur nach Objekttyp umgebaut, Admin- und Support-Konten getrennt (Rollenmodell in Arbeit)
 - [x] Remoteverwaltung per RSAT vom Client, Server-Admin-Konto ohne lokale Adminrechte am Client
 - [x] Rechtebefund behoben: Server-Admin-Konto aus vordefinierter Gruppe *Administratoren* entfernt (DC-Vollzugriff)
-- [x] AGDLP-Kette und Delegation „Kennwort zurücksetzen“ für den 1st Level, belegt durch Positiv- und Negativtests
+- [x] AGDLP-Kette und Delegation „Kennwort zurücksetzen“ und „Konto entsperren“ für den 1st Level, belegt durch Positiv- und Negativtests
+- [x] Kontosperrungsrichtlinie gesetzt (vorher Standard 0 = keine Sperre): 5 Fehlversuche, 15 Minuten
+- [x] DNS-Fehler behoben: DC registrierte seine NAT-Adresse, Clients erhielten sporadisch eine unerreichbare Adresse
 - [ ] Rollenmodell: Delegation L2, lokale Adminrechte per GPO, LAPS
 - [x] Windows-11-Client installiert, Netzwerk konfiguriert
 - [x] Server und Client können sich gegenseitig erreichen (Ping erfolgreich)
@@ -102,7 +104,7 @@ Details: [Interne CA & TLS](docs/03-pki-tls.md) · [Host-Firewall](docs/04-host-
 | [Netzwerk & Security (Roadmap)](docs/05-netzwerk-security.md) | OPNsense, VLANs, Netzwerkanalyse, Backup | ⬜ geplant |
 | [Security & Compliance](SECURITY-COMPLIANCE.md) | Mapping NIS2 Art. 21 / ISO 27001, Mini-Risikoanalyse | ✅ |
 
-**Troubleshooting:** alle 26 Fehlerfälle gesammelt im [Troubleshooting-Index](TROUBLESHOOTING.md).
+**Troubleshooting:** alle 29 Fehlerfälle gesammelt im [Troubleshooting-Index](TROUBLESHOOTING.md).
 
 ## Nächste Schritte
 

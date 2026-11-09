@@ -2,7 +2,7 @@
 
 [← Zur Übersicht](README.md)
 
-Alle 26 dokumentierten Fehlerfälle mit Ursache, Lösung und Nachweis, nach Teilprojekt sortiert. Jeder Link führt direkt zum Fall.
+Alle 29 dokumentierten Fehlerfälle mit Ursache, Lösung und Nachweis, nach Teilprojekt sortiert. Jeder Link führt direkt zum Fall.
 
 
 ## Active Directory, Client und Grundaufbau
@@ -11,6 +11,9 @@ Alle 26 dokumentierten Fehlerfälle mit Ursache, Lösung und Nachweis, nach Teil
 - [IP-Adresskonflikt zwischen Host und Server-VM](docs/01-active-directory.md#troubleshooting-ip-adresskonflikt-zwischen-host-und-server-vm)
 - [„Zugriff verweigert“ beim Verschieben von OUs](docs/01-active-directory.md#troubleshooting-zugriff-verweigert-beim-verschieben-von-ous)
 - [Server-Admin-Konto hatte über vordefinierte Gruppe DC-Vollzugriff](docs/01-active-directory.md#2-befund-server-admin-konto-hatte-über-eine-unauffällige-gruppe-dc-vollzugriff)
+- [Keine Kontosperrung in der Domäne (Sperrschwelle 0)](docs/01-active-directory.md#2-befund-keine-kontosperrung-in-der-domäne)
+- [RSAT-Installation meldet Erfolg, installiert aber nichts](docs/01-active-directory.md#troubleshooting-rsat-installation-meldet-erfolg-installiert-aber-nichts)
+- [„RPC-Server nicht verfügbar“ durch NAT-Adresse des DC im DNS](docs/01-active-directory.md#troubleshooting-rpc-server-nicht-verfügbar-durch-nat-adresse-des-dc-im-dns)
 
 ## Ticketsystem Zammad (Ubuntu + Docker)
 
