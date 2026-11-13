@@ -28,6 +28,8 @@ Erhoben per PowerShell (`Win32_Processor`, `Win32_PhysicalMemory`, `Get-Physical
 ## 2. Problem
 
 - Die 256-GB-Systemplatte war durch VM-Dateien und **Snapshots** nahezu voll.
+- **Auslöser:** Beim Aufbau des AD-Rollenmodells ließ sich vor der L2-Delegation kein Snapshot mehr erstellen. Die Arbeit wurde daraufhin **bewusst abgebrochen** – ohne Rückfallpunkt keine weiteren Änderungen am Domain Controller.
+<!-- Screenshot ergänzen: Snapshot-Fehlermeldung / volle Systemplatte -->
 - Snapshots sind für das Lab zentral (Rückfallpunkt vor jedem Umbau) – ohne freien Platz entfällt diese Absicherung.
 - Ein geplantes Backup-Konzept (Veeam) braucht zusätzlich ein **separates** Sicherungsziel.
 
@@ -96,12 +98,12 @@ flowchart LR
 
 | Maßnahme | Nutzen | Auslöser |
 |---|---|---|
-| RAM: 1× 32 GB + 1× 8 GB = 40 GB, später 2× 32 GB = 64 GB | mehr parallele VMs | sobald 16 GB limitieren (absehbar) |
+| RAM: 1× 16 GB + 1× 8 GB = 24 GB (Sparvariante) | mehr parallele VMs | sobald 16 GB limitieren (absehbar) |
 | CPU: i5-9500T / i7-8700T (gebraucht) | 6 statt 4 Kerne | bei CPU-Engpass unter Last |
 | 2,5"-SATA-SSD im freien Schacht | weiterer interner VM-Speicher | wenn 512 GB wieder knapp werden |
 | LAN-Kabel statt WLAN | stabilere Anbindung | jederzeit, sehr günstig |
 
-RAM wird bewusst als **1× 32 GB** statt 2× 16 GB geplant: So bleibt der Weg zu 64 GB offen, ohne gekaufte Riegel später ersetzen zu müssen.
+RAM wird wegen der aktuellen Preise bewusst als **Sparvariante** geplant: ein 8-GB-Riegel wird durch 1× 16 GB ersetzt (24 GB gesamt). Gemischte Riegelgrößen laufen nur teilweise im Dual-Channel – für ein Lab ein vertretbarer Kompromiss.
 
 ## 8. Fazit
 
