@@ -12,7 +12,7 @@ Ziel dieses Projekts ist der praktische Aufbau und Betrieb einer kleinen IT-Infr
 
 Das Lab wird schrittweise um Netzwerk- und Security-Komponenten erweitert (virtuelle Firewall, interne CA mit TLS, VLAN-Segmentierung, Netzwerkanalyse). Der aktuelle Stand steht im Abschnitt [Netzwerk- und Security-Erweiterung](docs/05-netzwerk-security.md#-netzwerk--und-security-erweiterung-in-arbeit). Die umgesetzten Sicherheitsmaßnahmen sind zusätzlich NIS2 Art. 21 und ISO 27001 Anhang A gegenübergestellt, inklusive offener Lücken und einer Mini-Risikoanalyse: [SECURITY-COMPLIANCE.md](SECURITY-COMPLIANCE.md).
 
-> **Hinweis zur Entstehung:** Aufbau, Konfiguration, Fehlersuche und Screenshots habe ich selbst im Lab durchgeführt. Die Dokumentation habe ich mit KI-Unterstützung (Claude) formuliert und strukturiert und inhaltlich selbst geprüft. Deshalb taucht Claude bei einzelnen Commits als Co-Autor auf.
+> **Hinweis zur Entstehung:** Aufbau, Konfiguration, Fehlersuche und Screenshots habe ich selbst im Lab durchgeführt. Die Dokumentation habe ich mit KI-Unterstützung (Claude) formuliert und strukturiert und inhaltlich selbst geprüft. Deshalb taucht Claude bei einzelnen älteren Commits als Co-Autor auf.
 
 ## Entwicklungsverlauf
 
