@@ -2,7 +2,7 @@
 
 [← Zur Übersicht](README.md)
 
-Alle 29 dokumentierten Fehlerfälle mit Ursache, Lösung und Nachweis, nach Teilprojekt sortiert. Jeder Link führt direkt zum Fall.
+Alle 30 dokumentierten Fehlerfälle mit Ursache, Lösung und Nachweis, nach Teilprojekt sortiert. Jeder Link führt direkt zum Fall.
 
 
 ## Active Directory, Client und Grundaufbau
@@ -45,3 +45,7 @@ Alle 29 dokumentierten Fehlerfälle mit Ursache, Lösung und Nachweis, nach Teil
 ## Host-Firewall (ufw) auf der Ticketsystem-VM
 
 - [Drei Stolpersteine](docs/04-host-firewall.md#fehlersuche-drei-stolpersteine)
+
+## Hardware & Speicher (Host)
+
+- [Snapshot lässt sich nicht löschen – kein Speicher zum Zusammenführen (`E_OUTOFMEMORY`)](docs/06-hardware-speichererweiterung.md#2-problem)
