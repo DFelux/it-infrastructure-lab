@@ -85,8 +85,8 @@ flowchart LR
 
 ## 6. Umsetzung
 
-1. SMART-Zustand aller Altplatten prüfen (CrystalDiskInfo)
-2. BitLocker-Status prüfen (`manage-bde -status`), ggf. anhalten
+1. ✅ SMART-Zustand aller Altplatten prüfen (CrystalDiskInfo): alle „Gut“, keine wiederzugewiesenen oder schwebenden Sektoren
+2. ✅ BitLocker-Status prüfen (`manage-bde -status`): nicht aktiv, kein Anhalten nötig
 3. Klon WD 256 GB → LITE-ON 512 GB mit Rescuezilla (Boot-Stick via Rufus), Partition auf volle Größe erweitern
 4. Platten tauschen, Bootfähigkeit prüfen
 5. Nach Stabilitätsphase: WD formatieren, als externe Ablage einbinden
