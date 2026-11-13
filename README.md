@@ -101,6 +101,7 @@ Details: [Interne CA & TLS](docs/03-pki-tls.md) · [Host-Firewall](docs/04-host-
 | [Ticketsystem Zammad](docs/02-zammad.md) | Ubuntu Server, Docker Compose, Neuaufbau v2, Rollen L1–L3 | ✅ |
 | [Interne CA & TLS](docs/03-pki-tls.md) | Root-CA, Serverzertifikat, nginx-Reverse-Proxy, Verteilung per GPO | ✅ |
 | [Host-Firewall (ufw)](docs/04-host-firewall.md) | Default deny, HTTPS offen, SSH nur aus dem Lab-Netz | ✅ |
+| [Hardware & Speichererweiterung](docs/06-hardware-speichererweiterung.md) | Speicherengpass, Variantenvergleich, wirtschaftliche Entscheidung, Aufrüstplan | 🔄 in Umsetzung |
 | [Netzwerk & Security (Roadmap)](docs/05-netzwerk-security.md) | OPNsense, VLANs, Netzwerkanalyse, Backup | ⬜ geplant |
 | [Security & Compliance](SECURITY-COMPLIANCE.md) | Mapping NIS2 Art. 21 / ISO 27001, Mini-Risikoanalyse | ✅ |
 
