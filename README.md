@@ -26,6 +26,7 @@ Das Lab wächst schrittweise. Jede Stufe bringt es näher an eine reale Unterneh
 | Okt. 2026 | Absicherung | Interne Root-CA, TLS über nginx, Root-Zertifikat per GPO, Host-Firewall (ufw) | Verschlüsselte Dienste, zentral verteiltes Vertrauen, Default deny |
 | Okt. 2026 | Compliance | Mapping auf NIS2 Art. 21 und ISO 27001, Mini-Risikoanalyse | Maßnahmen werden begründet und Lücken benannt |
 | Nov. 2026 | Rollenmodell | OU-Umbau nach Objekttyp, getrennte Admin- und Support-Konten, RSAT-Fernverwaltung, AGDLP-Delegation für den 1st Level (Kennwort-Reset, Entsperren) mit Positiv-/Negativtests, Kontosperrungsrichtlinie | Least Privilege statt eines Administratorkontos für alles |
+| Nov. 2026 | Kapazitätsengpass | Rollenmodell vor der L2-Delegation gestoppt: Systemplatte (256 GB) voll, Snapshots ließen sich weder anlegen noch löschen. Bestandsaufnahme der vorhandenen Hardware, Variantenvergleich, Entscheidung für Klon auf 512-GB-NVMe, externe Ablage und getrenntes Backup-Ziel ([Details](docs/06-hardware-speichererweiterung.md)) | Kein Weiterarbeiten ohne Rückfallpunkt; Kapazitätsplanung und Kaufentscheidung begründet statt spontan |
 | geplant | Betrieb wie im Alltag | Verwaltung vom Admin-Arbeitsplatz (RSAT), Delegation, Automatisierung per PowerShell, LAPS | Keine Anmeldung direkt am Server, Rechte nur pro Aufgabe |
 | geplant | Netzwerk | Virtuelle Firewall, VLANs, Backup mit getesteter Wiederherstellung | Segmentierung und Ausfallsicherheit |
 
