@@ -28,8 +28,9 @@ Erhoben per PowerShell (`Win32_Processor`, `Win32_PhysicalMemory`, `Get-Physical
 ## 2. Problem
 
 - Die 256-GB-Systemplatte war durch VM-Dateien und **Snapshots** nahezu voll.
-- **Auslöser:** Beim Aufbau des AD-Rollenmodells ließ sich vor der L2-Delegation kein Snapshot mehr erstellen. Die Arbeit wurde daraufhin **bewusst abgebrochen** – ohne Rückfallpunkt keine weiteren Änderungen am Domain Controller.
-<!-- Screenshot ergänzen: Snapshot-Fehlermeldung / volle Systemplatte -->
+- **Auslöser:** Beim Aufbau des AD-Rollenmodells sollte vor der L2-Delegation Platz geschaffen werden. Selbst das **Löschen** eines alten Snapshots schlug fehl: VirtualBox muss dabei die Differenzplatte in die Basisplatte zusammenführen und braucht dafür freien Speicher (`E_OUTOFMEMORY`, „Not enough free storage space“). Ohne freien Platz ließen sich Snapshots also weder anlegen noch entfernen. Die Arbeit wurde daraufhin **bewusst abgebrochen** – ohne Rückfallpunkt keine weiteren Änderungen am Domain Controller.
+
+  ![Snapshot löschen schlägt fehl – nicht genug Speicher für das Zusammenführen](../screenshots/90-virtualbox-snapshot-merge-kein-speicher.png)
 - Snapshots sind für das Lab zentral (Rückfallpunkt vor jedem Umbau) – ohne freien Platz entfällt diese Absicherung.
 - Ein geplantes Backup-Konzept (Veeam) braucht zusätzlich ein **separates** Sicherungsziel.
 
