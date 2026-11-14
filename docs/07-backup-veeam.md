@@ -68,18 +68,33 @@ Get-FileHash "$env:USERPROFILE\Desktop\zammad.txt", "$env:USERPROFILE\Desktop\RE
 
 **Ergebnis:** Beide Prüfsummen sind identisch, die Datei wurde bitgenau aus der verschlüsselten Sicherung wiederhergestellt.
 
-## 6. Betrieb
+## 6. Recovery Media
+
+Für den Fall, dass Windows nicht mehr startet, wurde am 14.11.2026 ein bootfähiger USB-Stick (8 GB) mit der Veeam Recovery Environment erstellt (*Create Recovery Media*).
+
+| Option | Wert | Begründung |
+|---|---|---|
+| Ziel | USB-Stick (wird vollständig formatiert) | sofort startfähig, kein Umweg über ISO; die Seagate (D:) bewusst **nicht** gewählt |
+| Netzwerkeinstellungen dieses Computers | aktiviert | Zugriff auf Sicherungen auch über das Netzwerk |
+| Hardwaretreiber dieses Computers | aktiviert | Recovery-Umgebung erkennt NVMe und Netzwerk des M720q |
+| Entschlüsselungsschlüssel auf dem Medium | **deaktiviert** | Stick liegt neben der Sicherungsplatte; mit Schlüssel wäre die Verschlüsselung bei Verlust beider wertlos. Passwort liegt im Passwortmanager |
+
+Danach verschwand die Warnung „Recovery media not created“ im Veeam-Dashboard. Zum Zeitpunkt der Aufnahme existieren drei Läufe: der abgebrochene unverschlüsselte Erstversuch (grau), die Vollsicherung (~181 GB) und eine manuell gestartete inkrementelle Testsicherung (~5 GB). Im Zielordner liegen nur Metadatei (`.vbm`), Vollsicherung (`.vbk`) und Inkrement (`.vib`) – keine Reste des Erstversuchs.
+
+**Status:** erstellt, **Boot-Test ausstehend** (F12-Bootmenü, Recovery Environment muss die Sicherung auf D: finden; kein Restore).
+
+## 7. Betrieb
 
 - **Ablauf:** VMs herunterfahren (Client → Zammad → DC01), Platte anstecken, Sicherung läuft automatisch, Platte wird ausgeworfen, abziehen, VMs wieder starten (DC01 → Zammad → Client).
 - **Rhythmus:** wöchentlich und vor jedem größeren Umbau (z. B. vor der L2-Delegation im AD-Rollenmodell).
 - **Beobachten:** SMART-Wert C7 (CRC-Fehler) der HDD; steigt er nach Sicherungen deutlich, liegt es an Gehäuse oder Kabel.
 - **Zusätzliche Rückfallebene:** Die alte Systemplatte (WD 256 GB) liegt als startfähiger Klon vom 14.11.2026 offline.
 
-## 7. Offene Punkte
+## 8. Offene Punkte
 
 | Punkt | Warum |
 |---|---|
-| Recovery Media erstellen (Boot-Stick/ISO) | ohne laufendes Windows ist sonst kein Restore möglich |
+| Boot-Test der Recovery Media | ein nie gebootetes Medium ist nur angelegt, nicht belegt (Secure Boot, Treiber) |
 | Bare-Metal-Restore einmal testen (z. B. auf die freie WD) | Datei-Restore belegt die Lesbarkeit, nicht die Wiederherstellung des ganzen Hosts |
 | Anwendungskonsistente Sicherung des DC (Windows Server Backup / System State in der VM) | die Host-Sicherung erfasst laufende VMs nur absturzkonsistent; deshalb werden sie vorher heruntergefahren |
 | Zweite Kopie außer Haus (3-2-1-Regel) | aktuell zwei Kopien (Original + HDD) an einem Ort |
