@@ -22,6 +22,7 @@
 | Tags und Resource Locks auf Ressourcengruppen | [hybrid-identity-lab](https://github.com/DFelux/hybrid-identity-lab) | i) Management von Anlagen | 5.9 Inventar der Informationswerte, 8.32 Änderungssteuerung |
 | Ticketsystem (Zammad) mit Rollen Support L1–L3 als Grundlage einer Eskalationsstruktur | [Meilenstein Zammad](README.md#meilenstein-zammad-läuft) · [Rollen](screenshots/36-zammad-rollen.png) | b) Bewältigung von Sicherheitsvorfällen | 5.24 Planung des Vorfallmanagements, 5.26 Reaktion auf Vorfälle |
 | Jede Störung als Troubleshooting dokumentiert, jeweils mit Symptom, Ursache, Lösung und Erkenntnis | Troubleshooting-Abschnitte in der [README](README.md) | b) Vorfallbewältigung; f) Wirksamkeit | 5.27 Erkenntnisse aus Informationssicherheitsvorfällen, 5.37 Dokumentierte Betriebsabläufe |
+| Verschlüsselte Vollsicherung des Hosts inkl. VMs auf getrenntes, nur während der Sicherung verbundenes Medium; Wiederherstellung per SHA-256 belegt | [Kapitel 07](docs/07-backup-veeam.md) | c) Backup-Management, Wiederherstellung | 8.13 Sicherung von Informationen, 8.24 Einsatz von Kryptografie |
 | Keine Schlüssel oder Zugangsdaten im Repo; `.gitignore` schließt `*.key`, `*.srl` und `*.csr` aus; Platzhalter statt Benutzernamen und Passwörtern | [Sicherheitsbetrachtung](README.md#sicherheitsbetrachtung) | g) Cyberhygiene | 5.17 Authentisierungsinformationen, 8.12 Verhinderung von Datenlecks |
 
 ## 2. Bekannte Lücken und bewusst akzeptierte Abweichungen
@@ -30,7 +31,7 @@ Bewusst offen benannt. Ein Mapping ohne Lücken wäre bei einem Lab unglaubwürd
 
 | Lücke | NIS2 Art. 21 (2) | ISO 27001 Anhang A | Mögliche nächste Maßnahme |
 |---|---|---|---|
-| Kein Backup im eigentlichen Sinn: Es gibt [VM-Snapshots](screenshots/01-vm-snapshot-baum.png), diese liegen aber auf demselben Datenträger wie die VMs | c) Backup-Management, Wiederherstellung | 8.13 Sicherung von Informationen | Sicherung auf ein getrenntes Medium, Wiederherstellung einmal real testen |
+| Backup ohne Kopie außer Haus und ohne getesteten Bare-Metal-Restore (Datei-Restore ist belegt, siehe [Kapitel 07](docs/07-backup-veeam.md)) | c) Backup-Management, Wiederherstellung | 8.13 Sicherung von Informationen | Recovery Media erstellen, Komplett-Restore testen, zweite Kopie außer Haus (3-2-1) |
 | Keine Kapazitätsüberwachung: Das Host-Laufwerk lief unbemerkt voll und pausierte die VM ([VERR_DISK_FULL](screenshots/50-virtualbox-verr-disk-full.png)) | c) Aufrechterhaltung des Betriebs | 8.6 Kapazitätssteuerung | Speicherwarnung einrichten, verwaiste VM-Dateien regelmäßig prüfen |
 | Keine zentrale Protokollierung und kein Monitoring | b) Vorfallbewältigung; f) Wirksamkeit | 8.15 Protokollierung, 8.16 Überwachung | Logs zentral sammeln (z. B. Azure Monitor / Log Analytics) |
 | Keine zentrale Firewall im Netz, ufw schützt nur eine VM | i) Zugriffskontrolle | 8.20 Netzwerksicherheit, 8.22 Trennung von Netzwerken | Virtuelle Firewall (OPNsense) und VLAN-Segmentierung, siehe [Erweiterung](README.md#-netzwerk--und-security-erweiterung-in-arbeit) |
@@ -51,7 +52,7 @@ Bewertung: Eintrittswahrscheinlichkeit (W) und Auswirkung (A), jeweils 1 = gerin
 |---|---|---|---|---|---|---|
 | DC01 (AD DS) | Kompromittierung privilegierter Konten | 2 | 3 | 6 | MFA in der Cloud, Rollentrennung, Host-only-Netz | Mittel. Tiering für Admin-Konten und Protokollierung ergänzen |
 | Zammad-Server | Unbefugter Zugriff auf Weboberfläche oder SSH | 2 | 2 | 4 | TLS, Port-Bindung an localhost, Default-Deny-Firewall, SSH nur von definierten Quellen | Gering bis mittel. Schlüsselauthentifizierung und Patch-Routine ergänzen |
-| Lab-Daten (AD, Tickets) | Datenverlust durch Hardwaredefekt, vollen Datenträger oder Fehlkonfiguration | 2 | 3 | 6 | Nur Snapshots auf demselben Datenträger | **Hoch, faktisch unbehandelt.** Getrenntes Backup hat höchste Priorität |
+| Lab-Daten (AD, Tickets) | Datenverlust durch Hardwaredefekt, vollen Datenträger, Ransomware oder Fehlkonfiguration | 2 | 3 | 6 | Verschlüsselte Veeam-Vollsicherung auf externer HDD, nur während der Sicherung verbunden; Datei-Restore per Prüfsumme belegt ([Kapitel 07](docs/07-backup-veeam.md)); Kapazität nach Plattentausch bei 51 % frei | **Gering bis mittel** (vorher hoch, faktisch unbehandelt). Komplett-Restore testen und Kopie außer Haus ergänzen |
 
 ## 4. Ausblick
 
