@@ -5,7 +5,7 @@
 > - **Security:** eigene Root-CA, TLS über nginx-Reverse-Proxy, Root-Zertifikat per GPO verteilt, Host-Firewall (ufw, default deny)
 > - **Compliance:** Maßnahmen gegen NIS2 Art. 21 und ISO 27001 Anhang A gemappt, inkl. Mini-Risikoanalyse → [SECURITY-COMPLIANCE.md](SECURITY-COMPLIANCE.md)
 > - **Betrieb:** verschlüsselte Offline-Vollsicherung mit Veeam, Wiederherstellung per Prüfsumme belegt → [Kapitel 07](docs/07-backup-veeam.md)
-> - **Troubleshooting:** 30 real aufgetretene Fehler mit Ursache, Lösung und Nachweis dokumentiert
+> - **Troubleshooting:** 32 real aufgetretene Fehler mit Ursache, Lösung und Nachweis dokumentiert
 >
 > **Ausgewählte Fälle:** [SSH trotz korrekter Konfiguration nicht erreichbar](docs/02-zammad.md#troubleshooting-vm-per-ssh-vom-notebook-nicht-erreichbar-obwohl-alles-korrekt-konfiguriert-ist) · [CSRF-Fehler bei der Zammad-Anmeldung](docs/03-pki-tls.md#troubleshooting-zammad-anmeldung-scheitert-mit-verifizierung-des-sicherheits-tokens-fehlgeschlagen) · [IP-Adresskonflikt Host/Server](docs/01-active-directory.md#troubleshooting-ip-adresskonflikt-zwischen-host-und-server-vm)
 
@@ -109,7 +109,7 @@ Details: [Interne CA & TLS](docs/03-pki-tls.md) · [Host-Firewall](docs/04-host-
 | [Netzwerk & Security (Roadmap)](docs/05-netzwerk-security.md) | OPNsense, VLANs, Netzwerkanalyse | ⬜ geplant |
 | [Security & Compliance](SECURITY-COMPLIANCE.md) | Mapping NIS2 Art. 21 / ISO 27001, Mini-Risikoanalyse | ✅ |
 
-**Troubleshooting:** alle 30 Fehlerfälle gesammelt im [Troubleshooting-Index](TROUBLESHOOTING.md).
+**Troubleshooting:** alle 32 Fehlerfälle gesammelt im [Troubleshooting-Index](TROUBLESHOOTING.md).
 
 ## Nächste Schritte
 

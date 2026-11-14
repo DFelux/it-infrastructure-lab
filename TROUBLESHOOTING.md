@@ -2,7 +2,7 @@
 
 [← Zur Übersicht](README.md)
 
-Alle 30 dokumentierten Fehlerfälle mit Ursache, Lösung und Nachweis, nach Teilprojekt sortiert. Jeder Link führt direkt zum Fall.
+Alle 32 dokumentierten Fehlerfälle mit Ursache, Lösung und Nachweis, nach Teilprojekt sortiert. Jeder Link führt direkt zum Fall.
 
 
 ## Active Directory, Client und Grundaufbau
@@ -49,3 +49,8 @@ Alle 30 dokumentierten Fehlerfälle mit Ursache, Lösung und Nachweis, nach Teil
 ## Hardware & Speicher (Host)
 
 - [Snapshot lässt sich nicht löschen – kein Speicher zum Zusammenführen (`E_OUTOFMEMORY`)](docs/06-hardware-speichererweiterung.md#2-problem)
+- [C: lässt sich nach dem Klon nicht erweitern (Wiederherstellungspartition im Weg)](docs/06-hardware-speichererweiterung.md#ergebnis-plattentausch)
+
+## Backup (Veeam)
+
+- [Erste Sicherung startete unverschlüsselt](docs/07-backup-veeam.md#4-erste-vollsicherung)
