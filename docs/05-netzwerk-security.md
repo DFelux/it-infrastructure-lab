@@ -19,7 +19,7 @@ Firewall im Netz fehlt noch, genau das soll der weitere Ausbau ändern.
 | Compliance-Mapping (NIS2 / ISO 27001) | Maßnahmen den Anforderungen zuordnen, Lücken und Risiken bewerten | ✅ umgesetzt, siehe [SECURITY-COMPLIANCE.md](../SECURITY-COMPLIANCE.md) |
 | VLAN-Segmentierung | Trennung von Server-, Client- und Management-Netz | ⬜ geplant |
 | Netzwerkanalyse | Paketmitschnitte mit tcpdump/Wireshark, DNS-Prüfung mit dig | ⬜ geplant |
-| Backup und Restore | Sicherung der VMs und Konfigurationen (inkl. Firewall) auf ein getrenntes Medium, Wiederherstellung testen | ⬜ geplant |
+| Backup und Restore | Sicherung der VMs und Konfigurationen (inkl. Firewall) auf ein getrenntes Medium, Wiederherstellung testen | ✅ umgesetzt, siehe [Kapitel 07](07-backup-veeam.md) |
 
 ### Lernziele
 - Firewall-Regeln planen, testen und anhand der Logs nachvollziehen
