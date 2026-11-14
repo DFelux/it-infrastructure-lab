@@ -43,7 +43,7 @@ Bevor gekauft wird, wurde geprüft, was bereits vorhanden ist:
 | LITE-ON CA3-8D512, 512 GB | M.2 NVMe | geeignet als neue Systemplatte |
 | Seagate ST1000LM024, 1 TB | 2,5" SATA-**HDD**, 5400 U/min | zu langsam für VMs, gut für Backups |
 | LITE-ON L8T-256L9G, 256 GB (2014) | M.2 **SATA** | veraltet, nur Ablage |
-| WD SN730, 256 GB (nach Klon frei) | M.2 NVMe | schnell, als externe Ablage nutzbar |
+| WD SN730, 256 GB (nach Klon frei) | M.2 NVMe | bleibt vorerst als startfähiger Notfall-Klon liegen |
 
 **Lernpunkt:** Eine zunächst als „1-TB-SSD“ eingeplante Platte stellte sich anhand der Modellnummer als HDD heraus. Ohne diese Prüfung wären VMs auf einem ungeeigneten Datenträger gelandet.
 
@@ -70,28 +70,59 @@ flowchart LR
         A[LITE-ON 512 GB NVMe<br/>System + laufende VMs]
     end
     subgraph Extern_USB
-        B[WD SN730 256 GB NVMe<br/>ISOs, Vorlagen, archivierte VMs]
         C[Seagate 1 TB HDD<br/>Veeam-Backups]
     end
-    A -- Ablage --> B
+    subgraph Offline
+        B[WD SN730 256 GB NVMe<br/>Notfall-Klon vom 14.11.]
+    end
     A -- Backup --> C
+    A -. Klon .-> B
 ```
 
 **Begründung:**
 - **Wirtschaftlich:** Neukosten nur für zwei USB-Gehäuse; Speicher verdoppelt sich intern.
 - **Leistung:** Laufende VMs bleiben auf interner NVMe. Externe USB-Datenträger werden bewusst **nicht** für laufende VMs genutzt (Risiko beschädigter virtueller Platten bei Verbindungsabbruch).
 - **Sicherheit:** Backup liegt auf einem **getrennten, abziehbaren** Datenträger – schützt auch gegen Ransomware und Hardwaredefekt des Hosts.
-- **Rückfallplan:** Die alte WD-Platte wird erst formatiert, wenn das System von der neuen Platte mehrere Tage stabil läuft.
+- **Rückfallplan:** Die alte WD-Platte bleibt unverändert als startfähiger Klon liegen. ISOs und Vorlagen liegen nach der Erweiterung auf C:, eine externe Ablage ist vorerst nicht nötig.
 
 ## 6. Umsetzung
 
 1. ✅ SMART-Zustand aller Altplatten prüfen (CrystalDiskInfo): alle „Gut“, keine wiederzugewiesenen oder schwebenden Sektoren
 2. ✅ BitLocker-Status prüfen (`manage-bde -status`): nicht aktiv, kein Anhalten nötig
-3. Klon WD 256 GB → LITE-ON 512 GB mit Rescuezilla (Boot-Stick via Rufus), Partition auf volle Größe erweitern
-4. Platten tauschen, Bootfähigkeit prüfen
-5. Nach Stabilitätsphase: WD formatieren, als externe Ablage einbinden
-6. 1-TB-HDD als Ziel für Veeam Agent for Microsoft Windows (Free), Backup-Job + **Test-Restore**
-7. USB Selective Suspend deaktivieren (keine schlafenden Datenträger)
+3. ✅ Klon WD 256 GB → LITE-ON 512 GB mit Rescuezilla (Boot-Stick via balenaEtcher), Dauer 104,7 Minuten
+4. ✅ Platten getauscht, Windows startet von der neuen Platte
+5. ✅ C: erweitert: Die Wiederherstellungspartition lag zwischen C: und dem freien Platz und wurde per `reagentc` und `diskpart` ans Plattenende verschoben (siehe unten)
+6. WD bleibt als Notfall-Klon offline
+7. 1-TB-HDD als Ziel für Veeam Agent for Microsoft Windows (Free), Backup-Job + **Test-Restore**
+8. USB Selective Suspend deaktivieren (keine schlafenden Datenträger)
+
+
+### Ergebnis Plattentausch
+
+| | vorher | nachher |
+|---|---|---|
+| Systemplatte | WD SN730, 256 GB | LITE-ON CA3-8D512, 512 GB |
+| C: | 237,45 GB | 475,83 GB |
+| frei | 6,37 GB (3 %) | 244,52 GB (51 %) |
+
+**Stolperstein: C: ließ sich nicht erweitern.** Der Klon übernimmt die Partitionen 1:1. Hinter C: lag weiterhin die Wiederherstellungspartition (933 MB) und trennte C: vom freien Platz. Lösung, ohne das Wiederherstellungsabbild zu verlieren:
+
+```
+reagentc /disable
+diskpart
+  select disk 0
+  select partition 4
+  delete partition override
+  select partition 3
+  extend
+  shrink desired=1024 minimum=1024
+  create partition primary id=de94bba4-06d1-4d40-a16a-bfd50179d6ac
+  gpt attributes=0x8000000000000001
+  format quick fs=ntfs label="Windows RE tools"
+reagentc /enable
+```
+
+Nachweis: `reagentc /info` meldet „Enabled“, Speicherort `partition4` am Plattenende.
 
 <!-- Screenshots ergänzen: CrystalDiskInfo, Rescuezilla-Klon, Datenträgerverwaltung vorher/nachher -->
 
