@@ -157,6 +157,37 @@ Nachweis: `reagentc /info` meldet „Enabled“, Speicherort `partition4` am Pla
 
 ![Datenträgerverwaltung nachher: C: 475,83 GB, 51 % frei](../screenshots/100-datentraeger-nachher-475gb.png)
 
+### Netzanbindung: Standortwechsel und LAN
+
+Nach dem Plattentausch zog der Host an einen neuen Standort und lief zunächst per WLAN (192.168.178.29, Dauerping ohne Verlust). Am Abend wurde in einem Wartungsfenster auf LAN umgestellt. Ziel: **IP beibehalten**, damit RDP, SSH-Weiterleitung und Dokumentation unverändert gelten. Jede Änderung wurde einzeln getestet, bevor die nächste folgte.
+
+1. LAN-Kabel angeschlossen, in der Fritzbox die .29 fest dem LAN-Adapter (Ethernet 2) zugewiesen
+2. Am Host geprüft: Ethernet 2 hat 192.168.178.29, Gateway 192.168.178.1
+3. RDP über die .29 getestet, erst danach WLAN deaktiviert (`Disable-NetAdapter -Name "WLAN 2"`), damit kein zweiter Weg ins selbe Netz bleibt
+4. Von einem zweiten Rechner: Ping, `Test-NetConnection -Port 2222`, RDP und SSH (Port 2222 → Zammad-VM)
+
+**Ergebnis:** Host per LAN unter unveränderter IP erreichbar, WLAN aus, RDP und SSH funktionieren.
+
+#### Troubleshooting: Ping meldet „0 % Verlust“, Host trotzdem nicht erreichbar
+
+**Symptom:** Direkt nach dem Umschalten lieferte `ping 192.168.178.29` vier Antworten und „0 % Verlust“ – die Antworten lauteten aber „Antwort von 192.168.178.27: Zielhost nicht erreichbar“.
+**Ursache:** Die Antworten kamen vom eigenen Rechner: Auf die ARP-Anfrage nach der .29 antwortete niemand (Umschaltmoment WLAN → LAN, die .29 war bis dahin der WLAN-Karte zugeordnet). Windows zählt diese Fehlermeldungen als „empfangen“.
+**Lösung:** Konfiguration am Host geprüft (`ipconfig`), auf dem Testrechner ARP-Cache geleert (`arp -d *`), erneut getestet – danach Antworten von der .29 mit 2 ms.
+**Lehre:** Bei Ping die Absenderadresse der Antwort lesen, nicht die Statistik.
+
+#### Troubleshooting: SSH auf Port 2222 läuft in den Timeout, Ping und RDP funktionieren
+
+**Symptom:** `ssh -p 2222` und `Test-NetConnection 192.168.178.29 -Port 2222` scheitern (`TcpTestSucceeded : False`), obwohl Ping und RDP zum Host gehen.
+**Ursache:** Port 2222 ist eine Portweiterleitung in die Zammad-VM. Die VM lief während der gesamten Umstellung durch. Ihre Netzwerkanbindung bzw. die Weiterleitung war noch auf dem Stand vor dem Wechsel WLAN → LAN eingerichtet und griff nach dem Abschalten des WLAN-Adapters nicht mehr. Das Heimnetz selbst war nicht die Ursache (Ping und RDP zum Host funktionierten).
+**Lösung:** Zammad-VM neu gestartet (sauber heruntergefahren und wieder hochgefahren) – danach funktionierte SSH sofort.
+**Lehre:** Änderungen an der Netzanbindung des Hosts bei ausgeschalteten VMs durchführen oder die VMs danach neu starten. Bei Fehlern erst den Zieldienst prüfen (`netstat -ano | findstr :2222`, VM-Status), dann Firewall und Netz.
+
+#### Troubleshooting: RDP-Passwort des Host-Kontos nicht auffindbar
+
+**Symptom:** Für den RDP-Test über die neue Anbindung war das Passwort des lokalen Kontos nicht im Passwortmanager hinterlegt.
+**Lösung:** In einer noch offenen Admin-Sitzung am Host neu gesetzt (`net user admin *`, verdeckte Eingabe) und sofort im Passwortmanager gespeichert; danach RDP erfolgreich.
+**Maßnahme:** Alle Lab-Zugänge einmal mit dem Passwortmanager abgleichen.
+
 ## 7. Ausblick (bewusst zurückgestellt)
 
 | Maßnahme | Nutzen | Auslöser |
@@ -164,7 +195,6 @@ Nachweis: `reagentc /info` meldet „Enabled“, Speicherort `partition4` am Pla
 | RAM: 1× 16 GB + 1× 8 GB = 24 GB (Sparvariante) | mehr parallele VMs | sobald 16 GB limitieren (absehbar) |
 | CPU: i5-9500T / i7-8700T (gebraucht) | 6 statt 4 Kerne | bei CPU-Engpass unter Last |
 | 2,5"-SATA-SSD im freien Schacht | weiterer interner VM-Speicher | wenn 512 GB wieder knapp werden |
-| LAN-Kabel statt WLAN | stabilere Anbindung | jederzeit, sehr günstig |
 
 RAM wird wegen der aktuellen Preise bewusst als **Sparvariante** geplant: ein 8-GB-Riegel wird durch 1× 16 GB ersetzt (24 GB gesamt). Gemischte Riegelgrößen laufen nur teilweise im Dual-Channel – für ein Lab ein vertretbarer Kompromiss.
 
