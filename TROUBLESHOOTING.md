@@ -2,7 +2,7 @@
 
 [← Zur Übersicht](README.md)
 
-Alle 32 dokumentierten Fehlerfälle mit Ursache, Lösung und Nachweis, nach Teilprojekt sortiert. Jeder Link führt direkt zum Fall.
+Alle 35 dokumentierten Fehlerfälle mit Ursache, Lösung und Nachweis, nach Teilprojekt sortiert. Jeder Link führt direkt zum Fall.
 
 
 ## Active Directory, Client und Grundaufbau
@@ -50,6 +50,9 @@ Alle 32 dokumentierten Fehlerfälle mit Ursache, Lösung und Nachweis, nach Teil
 
 - [Snapshot lässt sich nicht löschen – kein Speicher zum Zusammenführen (`E_OUTOFMEMORY`)](docs/06-hardware-speichererweiterung.md#2-problem)
 - [C: lässt sich nach dem Klon nicht erweitern (Wiederherstellungspartition im Weg)](docs/06-hardware-speichererweiterung.md#ergebnis-plattentausch)
+- [Ping meldet „0 % Verlust“, Host trotzdem nicht erreichbar](docs/06-hardware-speichererweiterung.md#troubleshooting-ping-meldet-0--verlust-host-trotzdem-nicht-erreichbar)
+- [SSH auf Port 2222 läuft in den Timeout, Ping und RDP funktionieren](docs/06-hardware-speichererweiterung.md#troubleshooting-ssh-auf-port-2222-läuft-in-den-timeout-ping-und-rdp-funktionieren)
+- [RDP-Passwort des Host-Kontos nicht auffindbar](docs/06-hardware-speichererweiterung.md#troubleshooting-rdp-passwort-des-host-kontos-nicht-auffindbar)
 
 ## Backup (Veeam)
 
