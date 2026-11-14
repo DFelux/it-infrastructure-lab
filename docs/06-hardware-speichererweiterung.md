@@ -1,6 +1,8 @@
 # 06 – Hardware: Speicherengpass und Erweiterung
 
-> **Kurzfassung:** Der Homelab-Host lief mit 256 GB Systemplatte voll. Nach Bestandsaufnahme und Variantenvergleich wurde eine Lösung gewählt, die **fast vollständig mit vorhandener Hardware** auskommt: Klon auf eine 512-GB-NVMe, ausgelagerte Ablage auf externer NVMe, Backup auf externer HDD. Neu gekauft wurden nur zwei USB-Gehäuse.
+> **Kurzfassung:** Der Homelab-Host lief mit 256 GB Systemplatte voll. Nach Bestandsaufnahme und Variantenvergleich wurde eine Lösung gewählt, die **fast vollständig mit vorhandener Hardware** auskommt: Klon auf eine 512-GB-NVMe, alte Systemplatte als Notfall-Klon, Backup auf externer HDD ([Kapitel 07](07-backup-veeam.md)). Neu gekauft wurden nur zwei USB-Gehäuse.
+>
+> **Status:** ✅ umgesetzt am 14.11.2026 – C: von 237 GB (3 % frei) auf 475 GB (51 % frei).
 
 ---
 
