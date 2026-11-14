@@ -81,6 +81,12 @@ Für den Fall, dass Windows nicht mehr startet, wurde am 14.11.2026 ein bootfäh
 
 Danach verschwand die Warnung „Recovery media not created“ im Veeam-Dashboard. Zum Zeitpunkt der Aufnahme existieren drei Läufe: der abgebrochene unverschlüsselte Erstversuch (grau), die Vollsicherung (~181 GB) und eine manuell gestartete inkrementelle Testsicherung (~5 GB). Im Zielordner liegen nur Metadatei (`.vbm`), Vollsicherung (`.vbk`) und Inkrement (`.vib`) – keine Reste des Erstversuchs.
 
+![Recovery Media: Ziel USB-Stick, Treiber und Netzwerk, ohne Schlüssel](../screenshots/110-veeam-recovery-media-optionen.png)
+![Zusammenfassung vor dem Erstellen](../screenshots/111-veeam-recovery-media-zusammenfassung.png)
+![Recovery Media erfolgreich erstellt](../screenshots/112-veeam-recovery-media-erstellt.png)
+![Dashboard ohne Warnung: abgebrochener Erstlauf, Vollsicherung, Inkrement](../screenshots/113-veeam-dashboard-ohne-warnung.png)
+![Zielordner: nur .vbm, .vbk und .vib](../screenshots/114-veeam-zielordner-kette.png)
+
 **Status:** erstellt, **Boot-Test ausstehend** (F12-Bootmenü, Recovery Environment muss die Sicherung auf D: finden; kein Restore).
 
 ## 7. Betrieb
