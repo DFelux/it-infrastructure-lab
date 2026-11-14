@@ -166,6 +166,9 @@ Nach dem Plattentausch zog der Host an einen neuen Standort und lief zunächst p
 3. RDP über die .29 getestet, erst danach WLAN deaktiviert (`Disable-NetAdapter -Name "WLAN 2"`), damit kein zweiter Weg ins selbe Netz bleibt
 4. Von einem zweiten Rechner: Ping, `Test-NetConnection -Port 2222`, RDP und SSH (Port 2222 → Zammad-VM)
 
+![Fritzbox: 192.168.178.29 dauerhaft zugewiesen](../screenshots/115-fritzbox-ip-dauerhaft-zugewiesen.png)
+![Ethernet 2 mit 192.168.178.29 und Gateway (globale IPv6-Adressen entfernt)](../screenshots/118-ethernet2-ip-beibehalten.png)
+
 **Ergebnis:** Host per LAN unter unveränderter IP erreichbar, WLAN aus, RDP und SSH funktionieren.
 
 #### Troubleshooting: Ping meldet „0 % Verlust“, Host trotzdem nicht erreichbar
@@ -173,12 +176,16 @@ Nach dem Plattentausch zog der Host an einen neuen Standort und lief zunächst p
 **Symptom:** Direkt nach dem Umschalten lieferte `ping 192.168.178.29` vier Antworten und „0 % Verlust“ – die Antworten lauteten aber „Antwort von 192.168.178.27: Zielhost nicht erreichbar“.
 **Ursache:** Die Antworten kamen vom eigenen Rechner: Auf die ARP-Anfrage nach der .29 antwortete niemand (Umschaltmoment WLAN → LAN, die .29 war bis dahin der WLAN-Karte zugeordnet). Windows zählt diese Fehlermeldungen als „empfangen“.
 **Lösung:** Konfiguration am Host geprüft (`ipconfig`), auf dem Testrechner ARP-Cache geleert (`arp -d *`), erneut getestet – danach Antworten von der .29 mit 2 ms.
+![Ping: „Zielhost nicht erreichbar“ vom eigenen Rechner trotz 0 % Verlust](../screenshots/116-ping-zielhost-nicht-erreichbar.png)
+
 **Lehre:** Bei Ping die Absenderadresse der Antwort lesen, nicht die Statistik.
 
 #### Troubleshooting: SSH auf Port 2222 läuft in den Timeout, Ping und RDP funktionieren
 
 **Symptom:** `ssh -p 2222` und `Test-NetConnection 192.168.178.29 -Port 2222` scheitern (`TcpTestSucceeded : False`), obwohl Ping und RDP zum Host gehen.
 **Ursache:** Port 2222 ist eine Portweiterleitung in die Zammad-VM. Die VM lief während der gesamten Umstellung durch. Ihre Netzwerkanbindung bzw. die Weiterleitung war noch auf dem Stand vor dem Wechsel WLAN → LAN eingerichtet und griff nach dem Abschalten des WLAN-Adapters nicht mehr. Das Heimnetz selbst war nicht die Ursache (Ping und RDP zum Host funktionierten).
+![SSH-Timeout und Test-NetConnection: Ping ok, TCP 2222 fehlgeschlagen](../screenshots/117-ssh-2222-timeout-test-netconnection.png)
+
 **Lösung:** Zammad-VM neu gestartet (sauber heruntergefahren und wieder hochgefahren) – danach funktionierte SSH sofort.
 **Lehre:** Änderungen an der Netzanbindung des Hosts bei ausgeschalteten VMs durchführen oder die VMs danach neu starten. Bei Fehlern erst den Zieldienst prüfen (`netstat -ano | findstr :2222`, VM-Status), dann Firewall und Netz.
 
