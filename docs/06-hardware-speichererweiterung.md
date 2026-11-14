@@ -93,9 +93,26 @@ flowchart LR
 4. ✅ Platten getauscht, Windows startet von der neuen Platte
 5. ✅ C: erweitert: Die Wiederherstellungspartition lag zwischen C: und dem freien Platz und wurde per `reagentc` und `diskpart` ans Plattenende verschoben (siehe unten)
 6. WD bleibt als Notfall-Klon offline
-7. 1-TB-HDD als Ziel für Veeam Agent for Microsoft Windows (Free), Backup-Job + **Test-Restore**
+7. ✅ 1-TB-HDD als Ziel für Veeam Agent for Microsoft Windows (Free), Backup-Job + **Test-Restore** → eigenes Kapitel [07 – Backup mit Veeam](07-backup-veeam.md)
 8. USB Selective Suspend deaktivieren (keine schlafenden Datenträger)
 
+
+### Nachweise der Vorbereitung
+
+**SMART-Prüfung (CrystalDiskInfo):** Alle Platten „Gut“. Bei der HDD sind die kritischen Werte 05, C4, C5 und C6 bei 0; der CRC-Zähler (C7 = 7) deutet auf frühere Übertragungsfehler über Kabel/Anschluss hin und wird nach den Backup-Läufen beobachtet. Die LITE-ON ist praktisch neu (100 %, 1.084 Betriebsstunden, keine Medienfehler).
+
+![CrystalDiskInfo Seagate 1 TB](../screenshots/92a-crystaldiskinfo-seagate-1tb.png)
+![CrystalDiskInfo Seagate: C5/C6 = 0](../screenshots/92b-crystaldiskinfo-seagate-1tb-c5-c6.png)
+![CrystalDiskInfo LITE-ON 512 GB](../screenshots/93-crystaldiskinfo-liteon-512gb.png)
+
+**BitLocker:** nicht aktiv, daher kein Anhalten und keine Schlüsselsicherung vor dem Klon nötig.
+
+![manage-bde -status: vollständig entschlüsselt](../screenshots/91-bitlocker-status-nicht-aktiv.png)
+
+**Klon mit Rescuezilla** (Bildschirmfotos, da im Live-System keine Screenshots möglich): alle vier Partitionen übertragen, EFI-Booteintrag aktualisiert, Dauer 104,7 Minuten.
+
+![Rescuezilla: Klon bei 100 %](../screenshots/94-rescuezilla-klon-100-prozent.jpg)
+![Rescuezilla: Klon-Zusammenfassung](../screenshots/95-rescuezilla-klon-zusammenfassung.jpg)
 
 ### Ergebnis Plattentausch
 
@@ -124,7 +141,19 @@ reagentc /enable
 
 Nachweis: `reagentc /info` meldet „Enabled“, Speicherort `partition4` am Plattenende.
 
-<!-- Screenshots ergänzen: CrystalDiskInfo, Rescuezilla-Klon, Datenträgerverwaltung vorher/nachher -->
+**Vorher** (C: voll, freier Platz hinter der Wiederherstellungspartition):
+
+![Datenträgerverwaltung nach dem Klon](../screenshots/96-datentraeger-nach-klon-c-nicht-erweiterbar.png)
+![diskpart: Partition 4 (Wiederherstellung) hinter C:](../screenshots/97-diskpart-partitionen-winre-hinter-c.png)
+
+**Umsetzung und Nachweis:**
+
+![diskpart: C: erweitert, neue Wiederherstellungspartition](../screenshots/98-diskpart-c-erweitert-winre-neu.png)
+![reagentc /info: Enabled, partition4](../screenshots/99-reagentc-info-enabled.png)
+
+**Nachher:**
+
+![Datenträgerverwaltung nachher: C: 475,83 GB, 51 % frei](../screenshots/100-datentraeger-nachher-475gb.png)
 
 ## 7. Ausblick (bewusst zurückgestellt)
 
