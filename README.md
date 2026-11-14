@@ -4,6 +4,7 @@
 > - **Umgebung:** Windows Server 2022 (DC01, AD DS, DNS, GPO), Windows-11-Client in der Domäne, Ubuntu Server mit Zammad (Docker Compose)
 > - **Security:** eigene Root-CA, TLS über nginx-Reverse-Proxy, Root-Zertifikat per GPO verteilt, Host-Firewall (ufw, default deny)
 > - **Compliance:** Maßnahmen gegen NIS2 Art. 21 und ISO 27001 Anhang A gemappt, inkl. Mini-Risikoanalyse → [SECURITY-COMPLIANCE.md](SECURITY-COMPLIANCE.md)
+> - **Betrieb:** verschlüsselte Offline-Vollsicherung mit Veeam, Wiederherstellung per Prüfsumme belegt → [Kapitel 07](docs/07-backup-veeam.md)
 > - **Troubleshooting:** 30 real aufgetretene Fehler mit Ursache, Lösung und Nachweis dokumentiert
 >
 > **Ausgewählte Fälle:** [SSH trotz korrekter Konfiguration nicht erreichbar](docs/02-zammad.md#troubleshooting-vm-per-ssh-vom-notebook-nicht-erreichbar-obwohl-alles-korrekt-konfiguriert-ist) · [CSRF-Fehler bei der Zammad-Anmeldung](docs/03-pki-tls.md#troubleshooting-zammad-anmeldung-scheitert-mit-verifizierung-des-sicherheits-tokens-fehlgeschlagen) · [IP-Adresskonflikt Host/Server](docs/01-active-directory.md#troubleshooting-ip-adresskonflikt-zwischen-host-und-server-vm)
@@ -26,9 +27,10 @@ Das Lab wächst schrittweise. Jede Stufe bringt es näher an eine reale Unterneh
 | Okt. 2026 | Absicherung | Interne Root-CA, TLS über nginx, Root-Zertifikat per GPO, Host-Firewall (ufw) | Verschlüsselte Dienste, zentral verteiltes Vertrauen, Default deny |
 | Okt. 2026 | Compliance | Mapping auf NIS2 Art. 21 und ISO 27001, Mini-Risikoanalyse | Maßnahmen werden begründet und Lücken benannt |
 | Nov. 2026 | Rollenmodell | OU-Umbau nach Objekttyp, getrennte Admin- und Support-Konten, RSAT-Fernverwaltung, AGDLP-Delegation für den 1st Level (Kennwort-Reset, Entsperren) mit Positiv-/Negativtests, Kontosperrungsrichtlinie | Least Privilege statt eines Administratorkontos für alles |
-| Nov. 2026 | Kapazitätsengpass | Rollenmodell vor der L2-Delegation gestoppt: Systemplatte (256 GB) voll, Snapshots ließen sich weder anlegen noch löschen. Bestandsaufnahme der vorhandenen Hardware, Variantenvergleich, Entscheidung für Klon auf 512-GB-NVMe, externe Ablage und getrenntes Backup-Ziel ([Details](docs/06-hardware-speichererweiterung.md)) | Kein Weiterarbeiten ohne Rückfallpunkt; Kapazitätsplanung und Kaufentscheidung begründet statt spontan |
+| Nov. 2026 | Kapazitätsengpass | Rollenmodell vor der L2-Delegation gestoppt: Systemplatte (256 GB) voll, Snapshots ließen sich weder anlegen noch löschen. Bestandsaufnahme der vorhandenen Hardware, Variantenvergleich, Entscheidung für Klon auf 512-GB-NVMe und getrenntes Backup-Ziel, Umsetzung am 14.11. ([Details](docs/06-hardware-speichererweiterung.md)) | Kein Weiterarbeiten ohne Rückfallpunkt; Kapazitätsplanung und Kaufentscheidung begründet statt spontan |
+| Nov. 2026 | Backup | Veeam-Vollsicherung des Hosts auf externe HDD, verschlüsselt, Start beim Anstecken, danach automatisch ausgeworfen; Test-Restore per SHA-256 belegt ([Details](docs/07-backup-veeam.md)) | Höchstes Risiko der Risikoanalyse behandelt: getrennte Offline-Kopie mit nachgewiesener Wiederherstellung |
 | geplant | Betrieb wie im Alltag | Verwaltung vom Admin-Arbeitsplatz (RSAT), Delegation, Automatisierung per PowerShell, LAPS | Keine Anmeldung direkt am Server, Rechte nur pro Aufgabe |
-| geplant | Netzwerk | Virtuelle Firewall, VLANs, Backup mit getesteter Wiederherstellung | Segmentierung und Ausfallsicherheit |
+| geplant | Netzwerk | Virtuelle Firewall, VLANs | Segmentierung und Ausfallsicherheit |
 
 ## Architektur
 
@@ -90,7 +92,7 @@ Details: [Interne CA & TLS](docs/03-pki-tls.md) · [Host-Firewall](docs/04-host-
 - [ ] Zammad konfigurieren: Gruppen, Testbenutzer, Eskalationsablauf L1–L3
 - [x] Host-Firewall (ufw) auf der Ticketsystem-VM: Default deny, HTTPS offen, SSH nur von Lab-Netz und Admin-Notebook
 - [x] Security-Controls- und Compliance-Mapping (NIS2 / ISO 27001), siehe [SECURITY-COMPLIANCE.md](SECURITY-COMPLIANCE.md)
-- [ ] Backup auf ein getrenntes Medium mit getesteter Wiederherstellung (geplant)
+- [x] Backup auf ein getrenntes Medium mit getesteter Wiederherstellung (Veeam, verschlüsselt, offline, Restore per Hash belegt)
 - [ ] Virtuelle Firewall (OPNsense) für das interne Netz (geplant)
 - [ ] VLAN-Segmentierung (geplant)
 
@@ -102,8 +104,9 @@ Details: [Interne CA & TLS](docs/03-pki-tls.md) · [Host-Firewall](docs/04-host-
 | [Ticketsystem Zammad](docs/02-zammad.md) | Ubuntu Server, Docker Compose, Neuaufbau v2, Rollen L1–L3 | ✅ |
 | [Interne CA & TLS](docs/03-pki-tls.md) | Root-CA, Serverzertifikat, nginx-Reverse-Proxy, Verteilung per GPO | ✅ |
 | [Host-Firewall (ufw)](docs/04-host-firewall.md) | Default deny, HTTPS offen, SSH nur aus dem Lab-Netz | ✅ |
-| [Hardware & Speichererweiterung](docs/06-hardware-speichererweiterung.md) | Speicherengpass, Variantenvergleich, wirtschaftliche Entscheidung, Aufrüstplan | 🔄 in Umsetzung |
-| [Netzwerk & Security (Roadmap)](docs/05-netzwerk-security.md) | OPNsense, VLANs, Netzwerkanalyse, Backup | ⬜ geplant |
+| [Hardware & Speichererweiterung](docs/06-hardware-speichererweiterung.md) | Speicherengpass, Variantenvergleich, wirtschaftliche Entscheidung, Klon und Partitionierung | ✅ |
+| [Backup mit Veeam](docs/07-backup-veeam.md) | Vollsicherung auf externe HDD, Verschlüsselung, Offline-Kopie, Test-Restore | ✅ |
+| [Netzwerk & Security (Roadmap)](docs/05-netzwerk-security.md) | OPNsense, VLANs, Netzwerkanalyse | ⬜ geplant |
 | [Security & Compliance](SECURITY-COMPLIANCE.md) | Mapping NIS2 Art. 21 / ISO 27001, Mini-Risikoanalyse | ✅ |
 
 **Troubleshooting:** alle 30 Fehlerfälle gesammelt im [Troubleshooting-Index](TROUBLESHOOTING.md).
@@ -111,7 +114,7 @@ Details: [Interne CA & TLS](docs/03-pki-tls.md) · [Host-Firewall](docs/04-host-
 ## Nächste Schritte
 
 - AD-Rollenmodell abschließen (siehe [Meilenstein](docs/01-active-directory.md#meilenstein-ad-rollenmodell-nach-least-privilege-in-arbeit))
-- Backup auf ein getrenntes Medium einrichten und eine Wiederherstellung testen (höchstes Risiko laut [Risikoanalyse](SECURITY-COMPLIANCE.md#3-mini-risikoanalyse))
+- Backup ausbauen: Recovery Media erstellen, Bare-Metal-Restore einmal testen (siehe [Kapitel 07](docs/07-backup-veeam.md#7-offene-punkte))
 - Gruppen anlegen und den Rollen L1 bis L3 Gruppenzugriff zuweisen
 - Testbenutzer (Agent und Kunde) und Testtickets anlegen, Eskalation von L1 
   an L2 durchspielen
