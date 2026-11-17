@@ -4,7 +4,7 @@
 > - **Umgebung:** Windows Server 2022 (DC01, AD DS, DNS, GPO), Windows-11-Client in der Domäne, Ubuntu Server mit Zammad (Docker Compose)
 > - **Security:** eigene Root-CA, TLS über nginx-Reverse-Proxy, Root-Zertifikat per GPO verteilt, Host-Firewall (ufw, default deny)
 > - **Compliance:** Maßnahmen gegen NIS2 Art. 21 und ISO 27001 Anhang A gemappt, inkl. Mini-Risikoanalyse → [SECURITY-COMPLIANCE.md](SECURITY-COMPLIANCE.md)
-> - **Betrieb:** verschlüsselte Offline-Vollsicherung mit Veeam, Wiederherstellung per Prüfsumme belegt → [Kapitel 07](docs/07-backup-veeam.md)
+> - **Betrieb:** verschlüsselte Offline-Vollsicherung mit Veeam, Wiederherstellung per Prüfsumme und Boot-Test des Recovery Media belegt → [Kapitel 07](docs/07-backup-veeam.md)
 > - **Troubleshooting:** 35 real aufgetretene Fehler mit Ursache, Lösung und Nachweis dokumentiert
 >
 > **Ausgewählte Fälle:** [SSH trotz korrekter Konfiguration nicht erreichbar](docs/02-zammad.md#troubleshooting-vm-per-ssh-vom-notebook-nicht-erreichbar-obwohl-alles-korrekt-konfiguriert-ist) · [CSRF-Fehler bei der Zammad-Anmeldung](docs/03-pki-tls.md#troubleshooting-zammad-anmeldung-scheitert-mit-verifizierung-des-sicherheits-tokens-fehlgeschlagen) · [IP-Adresskonflikt Host/Server](docs/01-active-directory.md#troubleshooting-ip-adresskonflikt-zwischen-host-und-server-vm)
@@ -28,7 +28,7 @@ Das Lab wächst schrittweise. Jede Stufe bringt es näher an eine reale Unterneh
 | Okt. 2026 | Compliance | Mapping auf NIS2 Art. 21 und ISO 27001, Mini-Risikoanalyse | Maßnahmen werden begründet und Lücken benannt |
 | Nov. 2026 | Rollenmodell | OU-Umbau nach Objekttyp, getrennte Admin- und Support-Konten, RSAT-Fernverwaltung, AGDLP-Delegation für den 1st Level (Kennwort-Reset, Entsperren) mit Positiv-/Negativtests, Kontosperrungsrichtlinie | Least Privilege statt eines Administratorkontos für alles |
 | Nov. 2026 | Kapazitätsengpass | Rollenmodell vor der L2-Delegation gestoppt: Systemplatte (256 GB) voll, Snapshots ließen sich weder anlegen noch löschen. Bestandsaufnahme der vorhandenen Hardware, Variantenvergleich, Entscheidung für Klon auf 512-GB-NVMe und getrenntes Backup-Ziel, Umsetzung am 14.11. ([Details](docs/06-hardware-speichererweiterung.md)) | Kein Weiterarbeiten ohne Rückfallpunkt; Kapazitätsplanung und Kaufentscheidung begründet statt spontan |
-| Nov. 2026 | Backup | Veeam-Vollsicherung des Hosts auf externe HDD, verschlüsselt, Start beim Anstecken, danach automatisch ausgeworfen; Test-Restore per SHA-256 belegt ([Details](docs/07-backup-veeam.md)) | Höchstes Risiko der Risikoanalyse behandelt: getrennte Offline-Kopie mit nachgewiesener Wiederherstellung |
+| Nov. 2026 | Backup | Veeam-Vollsicherung des Hosts auf externe HDD, verschlüsselt, Start beim Anstecken, danach automatisch ausgeworfen; Test-Restore per SHA-256 belegt, Recovery Media per Boot-Test geprüft (17.11.) ([Details](docs/07-backup-veeam.md)) | Höchstes Risiko der Risikoanalyse behandelt: getrennte Offline-Kopie mit nachgewiesener Wiederherstellung |
 | geplant | Betrieb wie im Alltag | Verwaltung vom Admin-Arbeitsplatz (RSAT), Delegation, Automatisierung per PowerShell, LAPS | Keine Anmeldung direkt am Server, Rechte nur pro Aufgabe |
 | geplant | Netzwerk | Virtuelle Firewall, VLANs | Segmentierung und Ausfallsicherheit |
 
@@ -114,7 +114,7 @@ Details: [Interne CA & TLS](docs/03-pki-tls.md) · [Host-Firewall](docs/04-host-
 ## Nächste Schritte
 
 - AD-Rollenmodell abschließen (siehe [Meilenstein](docs/01-active-directory.md#meilenstein-ad-rollenmodell-nach-least-privilege-in-arbeit))
-- Backup ausbauen: Recovery Media erstellen, Bare-Metal-Restore einmal testen (siehe [Kapitel 07](docs/07-backup-veeam.md#7-offene-punkte))
+- Backup ausbauen: Bare-Metal-Restore einmal testen, System-State-Sicherung des DC, Kopie außer Haus (siehe [Kapitel 07](docs/07-backup-veeam.md#8-offene-punkte))
 - Gruppen anlegen und den Rollen L1 bis L3 Gruppenzugriff zuweisen
 - Testbenutzer (Agent und Kunde) und Testtickets anlegen, Eskalation von L1 
   an L2 durchspielen

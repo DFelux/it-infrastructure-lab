@@ -2,7 +2,7 @@
 
 [← Zur Übersicht](../README.md) · [Troubleshooting-Index](../TROUBLESHOOTING.md)
 
-> **Kurzfassung:** Der Homelab-Host wird als Vollsicherung inklusive aller VMs auf eine externe 1-TB-HDD gesichert. Die Sicherung ist verschlüsselt, startet automatisch beim Anstecken der Platte und meldet die Platte danach selbst ab (Offline-Kopie). Die Wiederherstellung wurde real getestet und per Prüfsumme belegt.
+> **Kurzfassung:** Der Homelab-Host wird als Vollsicherung inklusive aller VMs auf eine externe 1-TB-HDD gesichert. Die Sicherung ist verschlüsselt, startet automatisch beim Anstecken der Platte und meldet die Platte danach selbst ab (Offline-Kopie). Die Wiederherstellung wurde real getestet und per Prüfsumme belegt, das Recovery Media per Boot-Test.
 
 ---
 
@@ -87,20 +87,43 @@ Danach verschwand die Warnung „Recovery media not created“ im Veeam-Dashboar
 ![Dashboard ohne Warnung: abgebrochener Erstlauf, Vollsicherung, Inkrement](../screenshots/113-veeam-dashboard-ohne-warnung.png)
 ![Zielordner: nur .vbm, .vbk und .vib](../screenshots/114-veeam-zielordner-kette.png)
 
-**Status:** erstellt, **Boot-Test ausstehend** (F12-Bootmenü, Recovery Environment muss die Sicherung auf D: finden; kein Restore).
+**Status:** erstellt und am 17.11.2026 per Boot-Test belegt (siehe 6.1).
+
+### 6.1 Boot-Test (17.11.2026)
+
+Ziel: Nachweisen, dass das Medium im Ernstfall startet, die Sicherung findet und sie ohne gespeicherten Schlüssel entschlüsseln kann. **Ausdrücklich ohne Restore.**
+
+Ablauf: VMs heruntergefahren (Client → Zammad → DC01), Seagate angesteckt, Neustart, F12-Bootmenü, vom Recovery-USB gestartet.
+
+| Prüfpunkt | Ergebnis |
+|---|---|
+| Recovery-Umgebung startet (Secure Boot, Treiber) | ✅ Veeam Recovery Media 13.1.2 auf Basis Windows 11 25H2 |
+| Sicherung auf der Seagate wird gefunden | ✅ automatisch erkannt: `D:\VeeamBackup\m720q-Vollsicherung\m720q-Vollsicherung.vbm`, Windows 11 Pro, Volume C |
+| Entschlüsselung ohne Schlüssel auf dem Medium | ✅ Passwortabfrage erscheint, Entschlüsselung mit dem Passwort aus dem Passwortmanager |
+| Wiederherstellungspunkte lesbar | ✅ Vollsicherung (14.11.2026, 10:47) und Inkrement (14.11.2026, 12:47), Disk 0 |
+
+Danach im Assistenten vor „Restore Mode“ abgebrochen, normal gestartet, VMs wieder hochgefahren (DC01 → Zammad → Client), Platte und Stick abgezogen und getrennt vom Host aufbewahrt.
+
+![Startmenü der Veeam Recovery Media 13.1.2](../screenshots/115-veeam-recovery-media-hauptmenue.jpg)
+![Bare Metal Recovery: Sicherung auf der Seagate automatisch gefunden](../screenshots/117-veeam-bmr-sicherung-gefunden.jpg)
+![Nach Passworteingabe: Wiederherstellungspunkte lesbar](../screenshots/118-veeam-bmr-restore-points-entschluesselt.jpg)
+
+**Stolperstein:** Der erste Versuch über *Windows Recovery Environment* meldete „Auf dem Computer wurde kein Systemabbild gefunden“. Das ist kein Fehler der Sicherung: Dieser Menüpunkt startet die Windows-eigene Systemabbild-Wiederherstellung und kennt nur Windows-Systemabbilder, keine Veeam-Sicherungen. Der richtige Weg ist *Bare Metal Recovery*. Für den Ernstfall im Betriebsablauf festgehalten.
+
+![Falscher Menüpunkt: Windows RE findet kein Systemabbild](../screenshots/116-windows-re-kein-systemabbild.jpg)
 
 ## 7. Betrieb
 
 - **Ablauf:** VMs herunterfahren (Client → Zammad → DC01), Platte anstecken, Sicherung läuft automatisch, Platte wird ausgeworfen, abziehen, VMs wieder starten (DC01 → Zammad → Client).
 - **Rhythmus:** wöchentlich und vor jedem größeren Umbau (z. B. vor der L2-Delegation im AD-Rollenmodell).
 - **Beobachten:** SMART-Wert C7 (CRC-Fehler) der HDD; steigt er nach Sicherungen deutlich, liegt es an Gehäuse oder Kabel.
+- **Ernstfall:** vom Recovery-USB starten (F12) → *Bare Metal Recovery* (nicht *Windows Recovery Environment*) → Local storage → Passwort aus dem Passwortmanager.
 - **Zusätzliche Rückfallebene:** Die alte Systemplatte (WD 256 GB) liegt als startfähiger Klon vom 14.11.2026 offline.
 
 ## 8. Offene Punkte
 
 | Punkt | Warum |
 |---|---|
-| Boot-Test der Recovery Media | ein nie gebootetes Medium ist nur angelegt, nicht belegt (Secure Boot, Treiber) |
 | Bare-Metal-Restore einmal testen (z. B. auf die freie WD) | Datei-Restore belegt die Lesbarkeit, nicht die Wiederherstellung des ganzen Hosts |
 | Anwendungskonsistente Sicherung des DC (Windows Server Backup / System State in der VM) | die Host-Sicherung erfasst laufende VMs nur absturzkonsistent; deshalb werden sie vorher heruntergefahren |
 | Zweite Kopie außer Haus (3-2-1-Regel) | aktuell zwei Kopien (Original + HDD) an einem Ort |
