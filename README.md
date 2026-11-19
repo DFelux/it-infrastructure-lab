@@ -29,6 +29,7 @@ Das Lab wächst schrittweise. Jede Stufe bringt es näher an eine reale Unterneh
 | Nov. 2026 | Rollenmodell | OU-Umbau nach Objekttyp, getrennte Admin- und Support-Konten, RSAT-Fernverwaltung, AGDLP-Delegation für den 1st Level (Kennwort-Reset, Entsperren) mit Positiv-/Negativtests, Kontosperrungsrichtlinie | Least Privilege statt eines Administratorkontos für alles |
 | Nov. 2026 | Kapazitätsengpass | Rollenmodell vor der L2-Delegation gestoppt: Systemplatte (256 GB) voll, Snapshots ließen sich weder anlegen noch löschen. Bestandsaufnahme der vorhandenen Hardware, Variantenvergleich, Entscheidung für Klon auf 512-GB-NVMe und getrenntes Backup-Ziel, Umsetzung am 14.11. ([Details](docs/06-hardware-speichererweiterung.md)) | Kein Weiterarbeiten ohne Rückfallpunkt; Kapazitätsplanung und Kaufentscheidung begründet statt spontan |
 | Nov. 2026 | Backup | Veeam-Vollsicherung des Hosts auf externe HDD, verschlüsselt, Start beim Anstecken, danach automatisch ausgeworfen; Test-Restore per SHA-256 belegt, Recovery Media per Boot-Test geprüft (17.11.) ([Details](docs/07-backup-veeam.md)) | Höchstes Risiko der Risikoanalyse behandelt: getrennte Offline-Kopie mit nachgewiesener Wiederherstellung |
+| Nov. 2026 | Cloud | Linux-Server in der Oracle Cloud (Oracle Linux 9) als eigenes Repository: Störungsanalyse eines SSH-Ausfalls mit Network Path Analyzer, Ursache Speichermangel eingegrenzt, Neuaufbau mit Backup und Notfallzugang ([oracle-cloud-lab](https://github.com/DFelux/oracle-cloud-lab)) | Öffentlich erreichbare Cloud-VM statt nur internem Lab; RHEL-Familie als Gegenstück zu Ubuntu |
 | geplant | Betrieb wie im Alltag | Verwaltung vom Admin-Arbeitsplatz (RSAT), Delegation, Automatisierung per PowerShell, LAPS | Keine Anmeldung direkt am Server, Rechte nur pro Aufgabe |
 | geplant | Netzwerk | Virtuelle Firewall, VLANs | Segmentierung und Ausfallsicherheit |
 
@@ -106,6 +107,7 @@ Details: [Interne CA & TLS](docs/03-pki-tls.md) · [Host-Firewall](docs/04-host-
 | [Host-Firewall (ufw)](docs/04-host-firewall.md) | Default deny, HTTPS offen, SSH nur aus dem Lab-Netz | ✅ |
 | [Hardware & Speichererweiterung](docs/06-hardware-speichererweiterung.md) | Speicherengpass, Variantenvergleich, wirtschaftliche Entscheidung, Klon und Partitionierung | ✅ |
 | [Backup mit Veeam](docs/07-backup-veeam.md) | Vollsicherung auf externe HDD, Verschlüsselung, Offline-Kopie, Test-Restore | ✅ |
+| [Oracle Cloud Lab](https://github.com/DFelux/oracle-cloud-lab) (eigenes Repository) | OCI Always Free, Oracle Linux 9, VCN/Security Lists, IAM, Störungsanalyse und Neuaufbau | ✅ / in Arbeit |
 | [Netzwerk & Security (Roadmap)](docs/05-netzwerk-security.md) | OPNsense, VLANs, Netzwerkanalyse | ⬜ geplant |
 | [Security & Compliance](SECURITY-COMPLIANCE.md) | Mapping NIS2 Art. 21 / ISO 27001, Mini-Risikoanalyse | ✅ |
 
