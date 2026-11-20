@@ -125,7 +125,7 @@ Danach im Assistenten vor „Restore Mode“ abgebrochen, normal gestartet, VMs 
 | Punkt | Warum |
 |---|---|
 | Bare-Metal-Restore einmal testen (z. B. auf die freie WD) | Datei-Restore belegt die Lesbarkeit, nicht die Wiederherstellung des ganzen Hosts |
-| Anwendungskonsistente Sicherung des DC (Windows Server Backup / System State in der VM) | die Host-Sicherung erfasst laufende VMs nur absturzkonsistent; deshalb werden sie vorher heruntergefahren |
+| ~~Anwendungskonsistente Sicherung des DC (Windows Server Backup / System State in der VM)~~ | ✅ erledigt am 20.11.2026, Sicherung und Restore belegt in [Kapitel 08](08-dc-system-state-backup.md) |
 | Zweite Kopie außer Haus (3-2-1-Regel) | aktuell zwei Kopien (Original + HDD) an einem Ort |
 
 [← Zur Übersicht](../README.md) · [Troubleshooting-Index](../TROUBLESHOOTING.md)

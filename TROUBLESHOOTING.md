@@ -2,7 +2,7 @@
 
 [← Zur Übersicht](README.md)
 
-Alle 35 dokumentierten Fehlerfälle mit Ursache, Lösung und Nachweis, nach Teilprojekt sortiert. Jeder Link führt direkt zum Fall.
+Alle 38 dokumentierten Fehlerfälle mit Ursache, Lösung und Nachweis, nach Teilprojekt sortiert. Jeder Link führt direkt zum Fall.
 
 
 ## Active Directory, Client und Grundaufbau
@@ -57,3 +57,9 @@ Alle 35 dokumentierten Fehlerfälle mit Ursache, Lösung und Nachweis, nach Teil
 ## Backup (Veeam)
 
 - [Erste Sicherung startete unverschlüsselt](docs/07-backup-veeam.md#4-erste-vollsicherung)
+
+## Domain Controller: System-State-Sicherung und Restore
+
+- [wbadmin: „Der angegebene Sicherungsort wurde nicht gefunden“](docs/08-dc-system-state-backup.md#stolperstein-der-angegebene-sicherungsort-wurde-nicht-gefunden)
+- [Anmeldung im DSRM mit Domänenkonto abgelehnt](docs/08-dc-system-state-backup.md#62-in-den-dsrm-starten)
+- [gpresult zeigt nach dem Restore noch den alten Stand](docs/08-dc-system-state-backup.md#7-nachweis)

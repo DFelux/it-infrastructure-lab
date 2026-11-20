@@ -4,8 +4,8 @@
 > - **Umgebung:** Windows Server 2022 (DC01, AD DS, DNS, GPO), Windows-11-Client in der Domäne, Ubuntu Server mit Zammad (Docker Compose)
 > - **Security:** eigene Root-CA, TLS über nginx-Reverse-Proxy, Root-Zertifikat per GPO verteilt, Host-Firewall (ufw, default deny)
 > - **Compliance:** Maßnahmen gegen NIS2 Art. 21 und ISO 27001 Anhang A gemappt, inkl. Mini-Risikoanalyse → [SECURITY-COMPLIANCE.md](SECURITY-COMPLIANCE.md)
-> - **Betrieb:** verschlüsselte Offline-Vollsicherung mit Veeam, Wiederherstellung per Prüfsumme und Boot-Test des Recovery Media belegt → [Kapitel 07](docs/07-backup-veeam.md)
-> - **Troubleshooting:** 35 real aufgetretene Fehler mit Ursache, Lösung und Nachweis dokumentiert
+> - **Betrieb:** verschlüsselte Offline-Vollsicherung mit Veeam, Wiederherstellung per Prüfsumme und Boot-Test des Recovery Media belegt → [Kapitel 07](docs/07-backup-veeam.md); System-State-Sicherung des DC mit Restore im DSRM belegt → [Kapitel 08](docs/08-dc-system-state-backup.md)
+> - **Troubleshooting:** 38 real aufgetretene Fehler mit Ursache, Lösung und Nachweis dokumentiert
 >
 > **Ausgewählte Fälle:** [SSH trotz korrekter Konfiguration nicht erreichbar](docs/02-zammad.md#troubleshooting-vm-per-ssh-vom-notebook-nicht-erreichbar-obwohl-alles-korrekt-konfiguriert-ist) · [CSRF-Fehler bei der Zammad-Anmeldung](docs/03-pki-tls.md#troubleshooting-zammad-anmeldung-scheitert-mit-verifizierung-des-sicherheits-tokens-fehlgeschlagen) · [IP-Adresskonflikt Host/Server](docs/01-active-directory.md#troubleshooting-ip-adresskonflikt-zwischen-host-und-server-vm)
 
@@ -29,6 +29,7 @@ Das Lab wächst schrittweise. Jede Stufe bringt es näher an eine reale Unterneh
 | Nov. 2026 | Rollenmodell | OU-Umbau nach Objekttyp, getrennte Admin- und Support-Konten, RSAT-Fernverwaltung, AGDLP-Delegation für den 1st Level (Kennwort-Reset, Entsperren) mit Positiv-/Negativtests, Kontosperrungsrichtlinie | Least Privilege statt eines Administratorkontos für alles |
 | Nov. 2026 | Kapazitätsengpass | Rollenmodell vor der L2-Delegation gestoppt: Systemplatte (256 GB) voll, Snapshots ließen sich weder anlegen noch löschen. Bestandsaufnahme der vorhandenen Hardware, Variantenvergleich, Entscheidung für Klon auf 512-GB-NVMe und getrenntes Backup-Ziel, Umsetzung am 14.11. ([Details](docs/06-hardware-speichererweiterung.md)) | Kein Weiterarbeiten ohne Rückfallpunkt; Kapazitätsplanung und Kaufentscheidung begründet statt spontan |
 | Nov. 2026 | Backup | Veeam-Vollsicherung des Hosts auf externe HDD, verschlüsselt, Start beim Anstecken, danach automatisch ausgeworfen; Test-Restore per SHA-256 belegt, Recovery Media per Boot-Test geprüft (17.11.) ([Details](docs/07-backup-veeam.md)) | Höchstes Risiko der Risikoanalyse behandelt: getrennte Offline-Kopie mit nachgewiesener Wiederherstellung |
+| Nov. 2026 | DC-Wiederherstellung | Systemstatus von DC01 per Windows Server Backup anwendungskonsistent gesichert, Testobjekt gelöscht und im DSRM wiederhergestellt: gleiche GUID und SID, SYSVOL, GPOs am Client und Zammad danach ohne Nacharbeit (20.11.) ([Details](docs/08-dc-system-state-backup.md)) | Active Directory gezielt wiederherstellbar statt nur über die Host-Sicherung |
 | Nov. 2026 | Cloud | Linux-Server in der Oracle Cloud (Oracle Linux 9) als eigenes Repository: Störungsanalyse eines wiederkehrenden Ausfalls mit Path Analyzer, Monitoring und Console History, Ursache belegt (OOM durch `dnf-makecache`), Speicher-Tuning (kdump/crashkernel), Neuaufbau mit Backup und Notfallzugang, SSH-Härtung ([oracle-cloud-lab](https://github.com/DFelux/oracle-cloud-lab)) | Öffentlich erreichbare Cloud-VM statt nur internem Lab; RHEL-Familie als Gegenstück zu Ubuntu |
 | geplant | Betrieb wie im Alltag | Verwaltung vom Admin-Arbeitsplatz (RSAT), Delegation, Automatisierung per PowerShell, LAPS | Keine Anmeldung direkt am Server, Rechte nur pro Aufgabe |
 | geplant | Netzwerk | Virtuelle Firewall, VLANs | Segmentierung und Ausfallsicherheit |
@@ -107,16 +108,17 @@ Details: [Interne CA & TLS](docs/03-pki-tls.md) · [Host-Firewall](docs/04-host-
 | [Host-Firewall (ufw)](docs/04-host-firewall.md) | Default deny, HTTPS offen, SSH nur aus dem Lab-Netz | ✅ |
 | [Hardware & Speichererweiterung](docs/06-hardware-speichererweiterung.md) | Speicherengpass, Variantenvergleich, wirtschaftliche Entscheidung, Klon und Partitionierung | ✅ |
 | [Backup mit Veeam](docs/07-backup-veeam.md) | Vollsicherung auf externe HDD, Verschlüsselung, Offline-Kopie, Test-Restore | ✅ |
+| [System-State-Sicherung DC](docs/08-dc-system-state-backup.md) | Windows Server Backup, Restore im DSRM mit Testobjekt, Nachweis GUID/SID, SYSVOL, GPO | ✅ |
 | [Oracle Cloud Lab](https://github.com/DFelux/oracle-cloud-lab) (eigenes Repository) | OCI Always Free, Oracle Linux 9, VCN/Security Lists, IAM, Störungsanalyse und Neuaufbau, SSH-Härtung | ✅ / in Arbeit |
 | [Netzwerk & Security (Roadmap)](docs/05-netzwerk-security.md) | OPNsense, VLANs, Netzwerkanalyse | ⬜ geplant |
 | [Security & Compliance](SECURITY-COMPLIANCE.md) | Mapping NIS2 Art. 21 / ISO 27001, Mini-Risikoanalyse | ✅ |
 
-**Troubleshooting:** alle 35 Fehlerfälle gesammelt im [Troubleshooting-Index](TROUBLESHOOTING.md).
+**Troubleshooting:** alle 38 Fehlerfälle gesammelt im [Troubleshooting-Index](TROUBLESHOOTING.md).
 
 ## Nächste Schritte
 
 - AD-Rollenmodell abschließen (siehe [Meilenstein](docs/01-active-directory.md#meilenstein-ad-rollenmodell-nach-least-privilege-in-arbeit))
-- Backup ausbauen: Bare-Metal-Restore einmal testen, System-State-Sicherung des DC, Kopie außer Haus (siehe [Kapitel 07](docs/07-backup-veeam.md#8-offene-punkte))
+- Backup ausbauen: Bare-Metal-Restore einmal testen, Kopie außer Haus (siehe [Kapitel 07](docs/07-backup-veeam.md#8-offene-punkte))
 - Gruppen anlegen und den Rollen L1 bis L3 Gruppenzugriff zuweisen
 - Testbenutzer (Agent und Kunde) und Testtickets anlegen, Eskalation von L1 
   an L2 durchspielen
